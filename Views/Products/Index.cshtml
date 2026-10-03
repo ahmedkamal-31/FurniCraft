@@ -1,72 +1,225 @@
 ﻿@model FurniCraft.ViewModels.ProductFilterViewModel
 @{
     ViewData["Title"] = "المتجر - الأثاث";
+
+    // View-only helpers (read the current filters from the address bar)
+    var currentSort = Context.Request.Query["sortBy"].ToString();
+    if (string.IsNullOrWhiteSpace(currentSort)) { currentSort = "default"; }
+
+    var hasSearch = !string.IsNullOrWhiteSpace(Model.SearchTerm);
+    var hasCategory = Model.SelectedCategoryId > 0;
+    var hasSort = currentSort != "default";
+    var hasFilters = hasSearch || hasCategory || hasSort;
+
+    var selectedCategory = hasCategory
+        ? Model.Categories.FirstOrDefault(c => c.Id == Model.SelectedCategoryId)
+        : null;
+
+    var resultsCount = Model.Products.Count();
+
+    int? categoryRoute = hasCategory ? (int?)Model.SelectedCategoryId : null;
+    string? searchRoute = hasSearch ? Model.SearchTerm : null;
+    string? sortRoute = hasSort ? currentSort : null;
+
+    var sortLabels = new Dictionary<string, string>
+    {
+        { "price_asc", "السعر: من الأقل للأعلى" },
+        { "price_desc", "السعر: من الأعلى للأقل" },
+        { "newest", "الأحدث وصل حديثاً" }
+    };
 }
 
-<div class="container my-4">
+<div class="container fc-shop">
+
+    <!-- Page title -->
+    <div class="fc-shop-header">
+        <h1 class="fc-shop-title">المتجر</h1>
+        <p class="fc-shop-subtitle">تصفح مجموعتنا من الأثاث العصري، وابحث أو رتّب حسب ما يناسبك.</p>
+    </div>
+
     <!-- Search & Filter Bar -->
-    <div class="fc-card p-3 mb-4">
-        <form asp-action="Index" method="get" class="row g-2 align-items-center">
-            <div class="col-md-4">
-                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="ابحث عن أثاث..." />
+    <div class="fc-filter-bar">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center" role="search">
+
+            <div class="col-lg-4 col-md-12">
+                <label for="searchTerm" class="visually-hidden">بحث</label>
+                <div class="input-group">
+                    <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                    <input type="text"
+                           id="searchTerm"
+                           name="searchTerm"
+                           value="@Model.SearchTerm"
+                           class="form-control"
+                           placeholder="ابحث عن أثاث..."
+                           autocomplete="off" />
+                </div>
             </div>
-            <div class="col-md-3">
-                <select name="categoryId" class="form-select">
+
+            <div class="col-lg-3 col-md-6">
+                <label for="categoryId" class="visually-hidden">التصنيف</label>
+                <select id="categoryId" name="categoryId" class="form-select" onchange="this.form.submit()">
                     <option value="">جميع التصنيفات</option>
                     @foreach (var cat in Model.Categories)
                     {
-                        if (Model.SelectedCategoryId == cat.Id)
-                        {
-                            <option value="@cat.Id" selected>@cat.Name</option>
-                        }
-                        else
-                        {
-                            <option value="@cat.Id">@cat.Name</option>
-                        }
+                    <option value="@cat.Id" selected="@(Model.SelectedCategoryId == cat.Id)">@cat.Name</option>
                     }
                 </select>
             </div>
-            <div class="col-md-3">
-                <select name="sortBy" class="form-select">
-                    <option value="default">الترتيب الافتراضي</option>
-                    <option value="price_asc">السعر: من الأقل للأعلى</option>
-                    <option value="price_desc">السعر: من الأعلى للأقل</option>
-                    <option value="newest">الأحدث وصل حديثاً</option>
+
+            <div class="col-lg-3 col-md-6">
+                <label for="sortBy" class="visually-hidden">الترتيب</label>
+                <select id="sortBy" name="sortBy" class="form-select" onchange="this.form.submit()">
+                    <option value="default" selected="@(currentSort == "default")">الترتيب الافتراضي</option>
+                    <option value="price_asc" selected="@(currentSort == "price_asc")">السعر: من الأقل للأعلى</option>
+                    <option value="price_desc" selected="@(currentSort == "price_desc")">السعر: من الأعلى للأقل</option>
+                    <option value="newest" selected="@(currentSort == "newest")">الأحدث وصل حديثاً</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-fc-primary w-100"><i class="bi bi-search me-1"></i> تصفية</button>
+
+            <div class="col-lg-2 col-md-12">
+                <button type="submit" class="btn btn-fc-primary w-100">
+                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>
+                    تصفية
+                </button>
             </div>
+
         </form>
     </div>
 
-    <!-- Products Grid -->
-    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-        @if (!Model.Products.Any())
+    <!-- Results summary + active filters -->
+    <div class="fc-filter-meta" aria-live="polite">
+
+        <span class="fc-results-count">
+            @resultsCount @(resultsCount == 1 ? "منتج" : "منتجات")
+        </span>
+
+        @if (hasFilters)
         {
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-box-seam display-1 text-muted"></i>
-                <h4 class="mt-3 text-muted">لا توجد منتجات مطابقة لخيارات البحث</h4>
-            </div>
+        <div class="fc-chips">
+
+            @if (hasSearch)
+                {
+            <a asp-action="Index"
+               asp-route-categoryId="@categoryRoute"
+               asp-route-sortBy="@sortRoute"
+               class="fc-chip"
+               aria-label="إزالة البحث">
+                بحث: @Model.SearchTerm
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </a>
+                }
+
+            @if (hasCategory && selectedCategory != null)
+                {
+            <a asp-action="Index"
+               asp-route-searchTerm="@searchRoute"
+               asp-route-sortBy="@sortRoute"
+               class="fc-chip"
+               aria-label="إزالة التصنيف">
+                @selectedCategory.Name
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </a>
+                }
+
+            @if (hasSort && sortLabels.ContainsKey(currentSort))
+                {
+            <a asp-action="Index"
+               asp-route-searchTerm="@searchRoute"
+               asp-route-categoryId="@categoryRoute"
+               class="fc-chip"
+               aria-label="إزالة الترتيب">
+                @sortLabels[currentSort]
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </a>
+                }
+
+            <a asp-action="Index" class="fc-clear-all">مسح الكل</a>
+
+        </div>
         }
-        else
-        {
-            @foreach (var product in Model.Products)
-            {
-                <div class="col">
-                    <div class="card fc-card h-100 border-0 overflow-hidden">
-                        <img src="@product.MainImage" class="card-img-top" style="height: 220px; object-fit: cover;" alt="@product.Name" onerror="this.src='/images/products/default.jpg'" />
-                        <div class="card-body d-flex flex-column p-3">
-                            <span class="badge bg-light text-dark align-self-start mb-2">@product.Category?.Name</span>
-                            <h6 class="card-title fw-bold text-truncate mb-1">@product.Name</h6>
-                            <p class="card-text text-primary fw-bold fs-5 mb-3">@product.BasePrice.ToString("N0") ج.م</p>
-                            <div class="mt-auto d-flex gap-2">
-                                <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-fc-outline btn-sm w-100">التفاصيل والتخصيص</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
+
     </div>
+
+    <!-- Products Grid -->
+    @if (!Model.Products.Any())
+    {
+    <div class="fc-empty-state" role="status">
+        <i class="bi bi-box-seam" aria-hidden="true"></i>
+        <h3>لا توجد منتجات مطابقة لخيارات البحث</h3>
+        <p class="mb-3">جرّب كلمات بحث مختلفة أو اختر تصنيفًا آخر.</p>
+        <a asp-action="Index" class="btn btn-fc-primary">عرض كل المنتجات</a>
+    </div>
+    }
+    else
+    {
+    <div class="row g-4">
+
+        @foreach (var product in Model.Products)
+            {
+        <div class="col-sm-6 col-lg-3">
+
+            <article class="fc-product-card">
+
+                <div class="fc-product-image-wrapper">
+
+                    @if (product.IsFeatured)
+                            {
+                    <span class="fc-product-badge">مميز</span>
+                            }
+
+                    <img src="@(string.IsNullOrWhiteSpace(product.MainImage) ? "/images/products/default.jpg" : product.MainImage)"
+                         alt="@product.Name"
+                         class="fc-product-image"
+                         loading="lazy"
+                         decoding="async"
+                         onerror="this.onerror=null;this.src='/images/products/default.jpg';" />
+
+                    <div class="fc-product-overlay">
+                        <a asp-action="Details"
+                           asp-route-id="@product.Id"
+                           class="fc-product-quick-btn"
+                           title="عرض المنتج"
+                           aria-label="عرض @product.Name">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                </div>
+
+                <div class="fc-product-content">
+
+                    @if (product.Category != null)
+                            {
+                    <span class="fc-product-category">@product.Category.Name</span>
+                            }
+
+                    <h3 class="fc-product-title">@product.Name</h3>
+
+                    <div class="fc-product-bottom">
+
+                        <div class="fc-product-price">
+                            @product.BasePrice.ToString("N0")
+                            <small>ج.م</small>
+                        </div>
+
+                        <a asp-action="Details"
+                           asp-route-id="@product.Id"
+                           class="fc-product-details"
+                           aria-label="التفاصيل والتخصيص لـ @product.Name">
+                            التفاصيل والتخصيص
+                            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+            }
+
+    </div>
+    }
+
 </div>
