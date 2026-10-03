@@ -20,20 +20,41 @@ namespace FurniCraft.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddToCart(int productId, List<int> selectedOptionIds)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddToCart(
+            int productId,
+            List<int> selectedOptionIds,
+            int quantity = 1)
         {
-            await _cartService.AddToCartAsync(productId, selectedOptionIds ?? new List<int>());
+            var result = await _cartService.AddToCartAsync(
+                productId,
+                selectedOptionIds ?? new List<int>(),
+                quantity
+            );
+
+            if (!result.Success)
+            {
+                TempData["CartError"] = result.ErrorMessage;
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public IActionResult RemoveFromCart(int productId, string optionIdsCsv)
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveFromCart(
+            int productId,
+            string optionIdsCsv)
         {
-            var optionIds = string.IsNullOrEmpty(optionIdsCsv) 
-                ? new List<int>() 
-                : optionIdsCsv.Split(',').Select(int.Parse).ToList();
+            var optionIds = string.IsNullOrEmpty(optionIdsCsv)
+                ? new List<int>()
+                : optionIdsCsv
+                    .Split(',')
+                    .Select(int.Parse)
+                    .ToList();
 
             _cartService.RemoveFromCart(productId, optionIds);
+
             return RedirectToAction(nameof(Index));
         }
     }

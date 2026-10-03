@@ -4,92 +4,104 @@
 }
 
 <div class="container my-5">
+    @if (TempData["CartError"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["CartError"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"></button>
+    </div>
+}
     <h2 class="fw-bold mb-4"><i class="bi bi-bag-check-fill text-primary me-2"></i>سلة التسوق الخاصة بك</h2>
 
     @if (!Model.Items.Any())
     {
-        <div class="fc-card p-5 text-center">
-            <i class="bi bi-cart-x display-1 text-muted mb-3 d-block"></i>
-            <h4 class="fw-bold text-muted">سلة التسوق فارغة حالياً</h4>
-            <p class="text-muted mb-4">استكشف منتجات الأثاث وقم بتخصيص قطعك المفضلة وإضافتها هنا.</p>
-            <a asp-controller="Products" asp-action="Index" class="btn btn-fc-primary btn-lg"><i class="bi bi-shop me-2"></i> الذهاب للمتجر</a>
-        </div>
+    <div class="fc-card p-5 text-center">
+        <i class="bi bi-cart-x display-1 text-muted mb-3 d-block"></i>
+        <h4 class="fw-bold text-muted">سلة التسوق فارغة حالياً</h4>
+        <p class="text-muted mb-4">استكشف منتجات الأثاث وقم بتخصيص قطعك المفضلة وإضافتها هنا.</p>
+        <a asp-controller="Products" asp-action="Index" class="btn btn-fc-primary btn-lg"><i class="bi bi-shop me-2"></i> الذهاب للمتجر</a>
+    </div>
     }
     else
     {
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="fc-card p-3">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>المنتج</th>
-                                    <th>سعر القطعة</th>
-                                    <th>الكمية</th>
-                                    <th>الإجمالي</th>
-                                    <th class="text-center">إزالة</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in Model.Items)
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="fc-card p-3">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المنتج</th>
+                                <th>سعر القطعة</th>
+                                <th>الكمية</th>
+                                <th>الإجمالي</th>
+                                <th class="text-center">إزالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
                                 {
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <img src="@item.ProductImage" class="rounded" style="width: 70px; height: 70px; object-fit: cover;" onerror="this.src='/images/products/default.jpg'" />
-                                                <div>
-                                                    <h6 class="fw-bold mb-1">@item.ProductName</h6>
-                                                    @if (item.SelectedCustomizations.Any())
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@item.ProductImage" class="rounded" style="width: 70px; height: 70px; object-fit: cover;" onerror="this.src='/images/products/default.jpg'" />
+                                        <div>
+                                            <h6 class="fw-bold mb-1">@item.ProductName</h6>
+                                            @if (item.SelectedCustomizations.Any())
                                                     {
-                                                        <ul class="list-unstyled small text-muted mb-0">
-                                                            @foreach (var cust in item.SelectedCustomizations)
+                                            <ul class="list-unstyled small text-muted mb-0">
+                                                @foreach (var cust in item.SelectedCustomizations)
                                                             {
-                                                                <li><i class="bi bi-check2 me-1 text-primary"></i>@cust</li>
+                                                <li><i class="bi bi-check2 me-1 text-primary"></i>@cust</li>
                                                             }
-                                                        </ul>
+                                            </ul>
                                                     }
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="fw-bold">@item.UnitPrice.ToString("N0") ج.م</td>
-                                        <td class="fw-bold">@item.Quantity</td>
-                                        <td class="text-primary fw-bold">@item.TotalPrice.ToString("N0") ج.م</td>
-                                        <td class="text-center">
-                                            <form asp-action="RemoveFromCart" method="post">
-                                                <input type="hidden" name="productId" value="@item.ProductId" />
-                                                <input type="hidden" name="optionIdsCsv" value="@string.Join(",", item.SelectedOptionIds)" />
-                                                <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash-fill fs-5"></i></button>
-                                            </form>
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">@item.UnitPrice.ToString("N0") ج.م</td>
+                                <td class="fw-bold">@item.Quantity</td>
+                                <td class="text-primary fw-bold">@item.TotalPrice.ToString("N0") ج.م</td>
+                                <td class="text-center">
+                                    <form asp-action="RemoveFromCart" method="post">
+                                        <input type="hidden" name="productId" value="@item.ProductId" />
+                                        <input type="hidden" name="optionIdsCsv" value="@string.Join(",", item.SelectedOptionIds)" />
+                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash-fill fs-5"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="fc-card p-4">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">ملخص الطلب</h5>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">عدد العناصر:</span>
-                        <span class="fw-bold">@Model.Items.Sum(i => i.Quantity)</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">الإجمالي الكلي:</span>
-                        <span class="fs-4 fw-bold text-primary">@Model.GrandTotal.ToString("N0") ج.م</span>
-                    </div>
-
-                    <hr class="my-3" />
-
-                    <div class="d-grid gap-2">
-                        <a asp-controller="Orders" asp-action="Checkout" class="btn btn-fc-primary btn-lg"><i class="bi bi-credit-card me-2"></i> متابعة إتمام الطلب (Checkout)</a>
-                        <a asp-controller="Products" asp-action="Index" class="btn btn-fc-outline"><i class="bi bi-arrow-right me-1"></i> مواصلة التسوق</a>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
+        <div class="col-lg-4">
+            <div class="fc-card p-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2">ملخص الطلب</h5>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">عدد العناصر:</span>
+                    <span class="fw-bold">@Model.Items.Sum(i => i.Quantity)</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">الإجمالي الكلي:</span>
+                    <span class="fs-4 fw-bold text-primary">@Model.GrandTotal.ToString("N0") ج.م</span>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="d-grid gap-2">
+                    <a asp-controller="Orders" asp-action="Checkout" class="btn btn-fc-primary btn-lg"><i class="bi bi-credit-card me-2"></i> متابعة إتمام الطلب (Checkout)</a>
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-fc-outline"><i class="bi bi-arrow-right me-1"></i> مواصلة التسوق</a>
+                </div>
+            </div>
+        </div>
+    </div>
     }
 </div>

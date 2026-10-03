@@ -1,4 +1,4 @@
-﻿using FurniCraft.Data;
+using FurniCraft.Data;
 using FurniCraft.Models;
 using FurniCraft.Services;
 using FurniCraft.ViewModels;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace FurniCraft.Controllers
 {
@@ -16,24 +17,29 @@ namespace FurniCraft.Controllers
         private readonly CartService _cartService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public OrdersController(ApplicationDbContext context, CartService cartService, UserManager<ApplicationUser> userManager)
+        public OrdersController(
+            ApplicationDbContext context,
+            CartService cartService,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _cartService = cartService;
             _userManager = userManager;
         }
 
-        // 1. صفحة إتمام الطلب (Checkout)
+        // 1. ???? ????? ?????
         [HttpGet]
         public async Task<IActionResult> Checkout()
         {
             var cart = _cartService.GetCart();
+
             if (!cart.Items.Any())
             {
                 return RedirectToAction("Index", "Cart");
             }
 
             var user = await _userManager.GetUserAsync(User);
+
             var model = new CheckoutViewModel
             {
                 CustomerName = user?.FullName ?? string.Empty,
@@ -44,15 +50,16 @@ namespace FurniCraft.Controllers
             return View(model);
         }
 
-        // 2. معالجة الطلب والتخزين
+        // 2. ?????? ????? ???? ???????
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PlaceOrder(CheckoutViewModel model)
         {
             var cart = _cartService.GetCart();
+
             if (!cart.Items.Any())
             {
-                ModelState.AddModelError("", "سلة التسوق فارغة.");
+                ModelState.AddModelError("", "??? ?????? ?????.");
                 return RedirectToAction("Index", "Cart");
             }
 
@@ -62,84 +69,253 @@ namespace FurniCraft.Controllers
                 return View("Checkout", model);
             }
 
-            var userId = _userManager.GetUserId(User)!;
+            /*
+             * ???? Transaction ????:
+             * ????? ????? + ??? ???????
+             * ?????? ?? ???.
+             */
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-            var order = new Order
+            try
             {
-                OrderNumber = "ORD-" + DateTime.UtcNow.Ticks.ToString()[^8..],
-                UserId = userId,
-                CustomerName = model.CustomerName,
-                Phone = model.Phone,
-                City = model.City,
-                Address = model.Address,
-                Notes = model.Notes,
-                TotalAmount = cart.GrandTotal,
-                Status = "Pending",
-                PaymentMethod = "CashOnDelivery",
-                OrderDate = DateTime.UtcNow
-            };
+                /*
+                 * ????? ?????? ???????? ??? ????.
+                 *
+                 * ??? ???? ??? ??? ?????? ???? ???? ?????
+                 * ?? ????? ????? ?? customization.
+                 */
+                var requestedQuantities = cart.Items
+                    .GroupBy(i => i.ProductId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Sum(i => i.Quantity));
 
-            foreach (var item in cart.Items)
-            {
-                var orderItem = new OrderItem
+                var productIds = requestedQuantities.Keys.ToList();
+
+                /*
+                 * ??? ???????? ?? ????? ????????
+                 * ???? ???????? ??? ?????? ??? Session.
+                 */
+                var products = await _context.Products
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToDictionaryAsync(p => p.Id);
+
+                /*
+                 * ?????? ?? ???? ???????? ???? Stock.
+                 */
+                foreach (var requested in requestedQuantities)
                 {
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    TotalPrice = item.TotalPrice
-                };
-
-                if (item.SelectedOptionIds != null && item.SelectedOptionIds.Any())
-                {
-                    var options = await _context.CustomizationOptions
-                        .Include(o => o.CustomizationGroup)
-                        .Where(o => item.SelectedOptionIds.Contains(o.Id))
-                        .ToListAsync();
-
-                    foreach (var opt in options)
+                    if (!products.TryGetValue(
+                        requested.Key,
+                        out var product))
                     {
-                        orderItem.Customizations.Add(new OrderItemCustomization
-                        {
-                            GroupName = opt.CustomizationGroup?.Name ?? "تخصيص",
-                            OptionName = opt.Name,
-                            AdditionalPrice = opt.AdditionalPrice
-                        });
+                        ModelState.AddModelError(
+                            "",
+                            "??? ???????? ???????? ?? ????? ?? ??? ???????.");
+
+                        await transaction.RollbackAsync();
+
+                        model.Cart = cart;
+                        return View("Checkout", model);
+                    }
+
+                    if (!product.IsActive)
+                    {
+                        ModelState.AddModelError(
+                            "",
+                            $"?????? \"{product.Name}\" ?? ??? ??????.");
+
+                        await transaction.RollbackAsync();
+
+                        model.Cart = cart;
+                        return View("Checkout", model);
+                    }
+
+                    if (requested.Value > product.StockQuantity)
+                    {
+                        ModelState.AddModelError(
+                            "",
+                            $"?????? \"{product.Name}\" ???? ??? {product.StockQuantity} ???? ???? ????? ???? {requested.Value}.");
+
+                        await transaction.RollbackAsync();
+
+                        model.Cart = cart;
+                        return View("Checkout", model);
                     }
                 }
 
-                order.Items.Add(orderItem);
+                var userId = _userManager.GetUserId(User)!;
+
+                /*
+                 * ????? TotalAmount ?? ????? ?????????
+                 * ???? ?? ????? ?????? ?? Session.
+                 */
+                decimal calculatedOrderTotal = 0;
+
+                var order = new Order
+                {
+                    OrderNumber =
+                        "ORD-" +
+                        DateTime.UtcNow.Ticks.ToString()[^8..],
+
+                    UserId = userId,
+
+                    CustomerName = model.CustomerName,
+                    Phone = model.Phone,
+                    City = model.City,
+                    Address = model.Address,
+                    Notes = model.Notes,
+
+                    Status = "Pending",
+                    PaymentMethod = "CashOnDelivery",
+                    OrderDate = DateTime.UtcNow
+                };
+
+                foreach (var item in cart.Items)
+                {
+                    var product = products[item.ProductId];
+
+                    /*
+                     * ????? ??? ??? customization options
+                     * ?? ????? ????????.
+                     */
+                    var selectedOptions = new List<CustomizationOption>();
+
+                    if (item.SelectedOptionIds != null &&
+                        item.SelectedOptionIds.Any())
+                    {
+                        selectedOptions = await _context.CustomizationOptions
+                            .Include(o => o.CustomizationGroup)
+                            .Where(o =>
+                                item.SelectedOptionIds.Contains(o.Id))
+                            .ToListAsync();
+                    }
+
+                    /*
+                     * ???? ??? ?????? ??????? ?? DB.
+                     */
+                    decimal extraPrice =
+                        selectedOptions.Sum(o => o.AdditionalPrice);
+
+                    decimal unitPrice =
+                        product.BasePrice + extraPrice;
+
+                    decimal itemTotal =
+                        unitPrice * item.Quantity;
+
+                    calculatedOrderTotal += itemTotal;
+
+                    var orderItem = new OrderItem
+                    {
+                        ProductId = product.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = unitPrice,
+                        TotalPrice = itemTotal
+                    };
+
+                    /*
+                     * ??? Snapshot ?? ????????? ???? ?????.
+                     */
+                    foreach (var option in selectedOptions)
+                    {
+                        orderItem.Customizations.Add(
+                            new OrderItemCustomization
+                            {
+                                GroupName =
+                                    option.CustomizationGroup?.Name
+                                    ?? "?????",
+
+                                OptionName = option.Name,
+
+                                AdditionalPrice =
+                                    option.AdditionalPrice
+                            });
+                    }
+
+                    order.Items.Add(orderItem);
+                }
+
+                /*
+                 * ?????? ????? ??????? ?? DB.
+                 */
+                order.TotalAmount = calculatedOrderTotal;
+
+                /*
+                 * ??? ?????? ?? ??? Stock.
+                 */
+                foreach (var requested in requestedQuantities)
+                {
+                    var product = products[requested.Key];
+
+                    product.StockQuantity -= requested.Value;
+                }
+
+                /*
+                 * ????? ????? + ????? ????????.
+                 */
+                _context.Orders.Add(order);
+
+                await _context.SaveChangesAsync();
+
+                /*
+                 * ????? ??? Transaction.
+                 */
+                await transaction.CommitAsync();
+
+                /*
+                 * ????? ????? ??? ??? ???? ??????? ???????.
+                 */
+                _cartService.ClearCart();
+
+                return RedirectToAction(
+                    nameof(Confirmation),
+                    new { id = order.Id });
             }
+            catch
+            {
+                await transaction.RollbackAsync();
 
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+                ModelState.AddModelError(
+                    "",
+                    "??? ??? ????? ????? ?????. ???? ??? ????.");
 
-            _cartService.ClearCart();
+                model.Cart = cart;
 
-            return RedirectToAction(nameof(Confirmation), new { id = order.Id });
+                return View("Checkout", model);
+            }
         }
 
-        // 3. صفحة تأكيد الطلب
+        // 3. ???? ????? ?????
         [HttpGet]
         public async Task<IActionResult> Confirmation(int id)
         {
             var userId = _userManager.GetUserId(User);
+
             var order = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Customizations)
-                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+                .FirstOrDefaultAsync(
+                    o => o.Id == id &&
+                         o.UserId == userId);
 
-            if (order == null) return NotFound();
+            if (order == null)
+            {
+                return NotFound();
+            }
 
             return View(order);
         }
 
-        // 4. عرض طلباتي للعميل
+        // 4. ??? ?????? ??????
         [HttpGet]
         public async Task<IActionResult> MyOrders()
         {
             var userId = _userManager.GetUserId(User);
+
             var orders = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
@@ -150,7 +326,7 @@ namespace FurniCraft.Controllers
             return View(orders);
         }
 
-        // 5. إدارة الطلبات للـ Admin
+        // 5. ????? ??????? ??? Admin
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> AdminIndex()
@@ -163,16 +339,20 @@ namespace FurniCraft.Controllers
             return View(orders);
         }
 
-        // 6. تحديث حالة الطلب من الـ Admin
+        // 6. ????? ???? ????? ?? ??? Admin
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(int orderId, string status)
+        public async Task<IActionResult> UpdateStatus(
+            int orderId,
+            string status)
         {
             var order = await _context.Orders.FindAsync(orderId);
+
             if (order != null)
             {
                 order.Status = status;
+
                 await _context.SaveChangesAsync();
             }
 

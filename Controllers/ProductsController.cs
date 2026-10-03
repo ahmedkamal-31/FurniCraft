@@ -13,34 +13,55 @@ namespace FurniCraft.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+        public ProductsController(
+            ApplicationDbContext context,
+            IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // عرض المنتجات للعملاء (Catalog View)
+        // ==========================================
+        // Customer - عرض المنتجات
+        // ==========================================
+
         [HttpGet]
-        public async Task<IActionResult> Index(int? categoryId, string? searchTerm, string sortBy = "default")
+        public async Task<IActionResult> Index(
+            int? categoryId,
+            string? searchTerm,
+            string sortBy = "default")
         {
-            var query = _context.Products.Include(p => p.Category).AsQueryable();
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
 
             if (categoryId.HasValue && categoryId.Value > 0)
             {
-                query = query.Where(p => p.CategoryId == categoryId.Value);
+                query = query.Where(
+                    p => p.CategoryId == categoryId.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(p => p.Name.Contains(searchTerm) || (p.Description != null && p.Description.Contains(searchTerm)));
+                query = query.Where(p =>
+                    p.Name.Contains(searchTerm) ||
+                    (p.Description != null &&
+                     p.Description.Contains(searchTerm)));
             }
 
             query = sortBy switch
             {
-                "price_asc" => query.OrderBy(p => p.BasePrice),
-                "price_desc" => query.OrderByDescending(p => p.BasePrice),
-                "newest" => query.OrderByDescending(p => p.CreatedAt),
-                _ => query.OrderByDescending(p => p.Id)
+                "price_asc" =>
+                    query.OrderBy(p => p.BasePrice),
+
+                "price_desc" =>
+                    query.OrderByDescending(p => p.BasePrice),
+
+                "newest" =>
+                    query.OrderByDescending(p => p.CreatedAt),
+
+                _ =>
+                    query.OrderByDescending(p => p.Id)
             };
 
             var viewModel = new ProductFilterViewModel
@@ -55,64 +76,107 @@ namespace FurniCraft.Controllers
             return View(viewModel);
         }
 
-        // صفحة تفاصيل المنتج
+        // ==========================================
+        // Customer - تفاصيل المنتج
+        // ==========================================
+
         [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+            {
+                return NotFound();
+            }
 
             var product = await _context.Products
                 .Include(p => p.Category)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (product == null) return NotFound();
+            if (product == null)
+            {
+                return NotFound();
+            }
 
             return View(product);
         }
 
-        // --- لوحة التحكم الخاصة بالإدارة (Admin Only) ---
+        // ==========================================
+        // Admin - قائمة المنتجات
+        // ==========================================
 
         [Authorize(Roles = "Admin")]
+        [HttpGet]
         public async Task<IActionResult> AdminIndex()
         {
-            var products = await _context.Products.Include(p => p.Category).ToListAsync();
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .OrderByDescending(p => p.Id)
+                .ToListAsync();
+
             return View(products);
         }
+
+        // ==========================================
+        // Admin - إضافة منتج
+        // ==========================================
 
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name");
+            ViewBag.Categories = new SelectList(
+                await _context.Categories.ToListAsync(),
+                "Id",
+                "Name");
+
             return View();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ProductCreateViewModel model)
+        public async Task<IActionResult> Create(
+            ProductCreateViewModel model)
         {
             if (ModelState.IsValid)
             {
-                string imageUrl = "/images/products/default.jpg";
+                string imageUrl =
+                    "/images/products/default.jpg";
 
-                if (model.ImageFile != null && model.ImageFile.Length > 0)
+                if (model.ImageFile != null &&
+                    model.ImageFile.Length > 0)
                 {
-                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "products");
+                    string uploadsFolder = Path.Combine(
+                        _webHostEnvironment.WebRootPath,
+                        "images",
+                        "products");
+
                     if (!Directory.Exists(uploadsFolder))
                     {
                         Directory.CreateDirectory(uploadsFolder);
                     }
 
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.ImageFile.FileName);
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    string uniqueFileName =
+                        Guid.NewGuid().ToString() +
+                        "_" +
+                        Path.GetFileName(
+                            model.ImageFile.FileName);
 
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await model.ImageFile.CopyToAsync(fileStream);
-                    }
+                    string filePath = Path.Combine(
+                        uploadsFolder,
+                        uniqueFileName);
 
-                    imageUrl = "/images/products/" + uniqueFileName;
+                    using var fileStream =
+                        new FileStream(
+                            filePath,
+                            FileMode.Create);
+
+                    await model.ImageFile.CopyToAsync(
+                        fileStream);
+
+                    imageUrl =
+                        "/images/products/" +
+                        uniqueFileName;
                 }
 
                 var product = new Product
@@ -126,27 +190,160 @@ namespace FurniCraft.Controllers
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _context.Add(product);
+                _context.Products.Add(product);
+
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(AdminIndex));
+
+                return RedirectToAction(
+                    nameof(AdminIndex));
             }
 
-            ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name", model.CategoryId);
+            ViewBag.Categories = new SelectList(
+                await _context.Categories.ToListAsync(),
+                "Id",
+                "Name",
+                model.CategoryId);
+
+            return View(model);
+        }
+
+        // ==========================================
+        // Admin - تعديل منتج
+        // ==========================================
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var product = await _context.Products
+                .FindAsync(id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            var model = new ProductCreateViewModel
+            {
+                Name = product.Name,
+                Description = product.Description,
+                BasePrice = product.BasePrice,
+                StockQuantity = product.StockQuantity,
+                CategoryId = product.CategoryId
+            };
+
+            ViewBag.Categories = new SelectList(
+                await _context.Categories.ToListAsync(),
+                "Id",
+                "Name",
+                product.CategoryId);
+
+            ViewBag.CurrentImage =
+                product.MainImage;
+
             return View(model);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            int id,
+            ProductCreateViewModel model)
+        {
+            var product = await _context.Products
+                .FindAsync(id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Categories = new SelectList(
+                    await _context.Categories.ToListAsync(),
+                    "Id",
+                    "Name",
+                    model.CategoryId);
+
+                ViewBag.CurrentImage =
+                    product.MainImage;
+
+                return View(model);
+            }
+
+            product.Name = model.Name;
+            product.Description = model.Description;
+            product.BasePrice = model.BasePrice;
+            product.StockQuantity = model.StockQuantity;
+            product.CategoryId = model.CategoryId;
+
+            // تغيير الصورة إذا تم رفع صورة جديدة
+            if (model.ImageFile != null &&
+                model.ImageFile.Length > 0)
+            {
+                string uploadsFolder = Path.Combine(
+                    _webHostEnvironment.WebRootPath,
+                    "images",
+                    "products");
+
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(
+                        uploadsFolder);
+                }
+
+                string uniqueFileName =
+                    Guid.NewGuid().ToString() +
+                    "_" +
+                    Path.GetFileName(
+                        model.ImageFile.FileName);
+
+                string filePath = Path.Combine(
+                    uploadsFolder,
+                    uniqueFileName);
+
+                using var fileStream =
+                    new FileStream(
+                        filePath,
+                        FileMode.Create);
+
+                await model.ImageFile.CopyToAsync(
+                    fileStream);
+
+                product.MainImage =
+                    "/images/products/" +
+                    uniqueFileName;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(
+                nameof(AdminIndex));
+        }
+
+        // ==========================================
+        // Admin - حذف منتج
+        // ==========================================
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products
+                .FindAsync(id);
+
             if (product != null)
             {
                 _context.Products.Remove(product);
+
                 await _context.SaveChangesAsync();
             }
-            return RedirectToAction(nameof(AdminIndex));
+
+            return RedirectToAction(
+                nameof(AdminIndex));
         }
     }
 }

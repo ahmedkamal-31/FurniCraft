@@ -1,59 +1,166 @@
 ﻿@model IEnumerable<FurniCraft.Models.Product>
-@{
+
+    @{
     ViewData["Title"] = "إدارة المنتجات";
-}
+    }
 
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="bi bi-box-seam-fill text-primary me-2"></i>إدارة منتجات الأثاث</h2>
-        <a asp-action="Create" class="btn btn-fc-primary"><i class="bi bi-plus-lg me-1"></i> إضافة منتج جديد</a>
-    </div>
+    <div class="container my-4">
 
-    <div class="fc-card p-3">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>الصورة</th>
-                        <th>اسم المنتج</th>
-                        <th>التصنيف</th>
-                        <th>السعر الأساسي</th>
-                        <th>المخزون</th>
-                        <th class="text-center">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Any())
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+                <i class="bi bi-box-seam-fill text-primary me-2"></i>
+                إدارة منتجات الأثاث
+            </h2>
+
+            <a asp-action="Create"
+               class="btn btn-fc-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                إضافة منتج جديد
+            </a>
+
+        </div>
+
+        <div class="fc-card p-3">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>الصورة</th>
+                            <th>اسم المنتج</th>
+                            <th>التصنيف</th>
+                            <th>السعر الأساسي</th>
+                            <th>المخزون</th>
+                            <th class="text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">لا توجد منتجات حالياً.</td>
+                            <td colspan="6"
+                                class="text-center text-muted py-4">
+
+                                لا توجد منتجات حالياً.
+
+                            </td>
                         </tr>
                     }
                     else
                     {
-                        @foreach (var item in Model)
+                        foreach (var item in Model)
                         {
-                            <tr>
-                                <td>
-                                    <img src="@item.MainImage" class="rounded" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.src='/images/products/default.jpg'" />
-                                </td>
-                                <td class="fw-bold">@item.Name</td>
-                                <td><span class="badge bg-light text-dark">@item.Category?.Name</span></td>
-                                <td class="text-primary fw-bold">@item.BasePrice.ToString("N0") ج.م</td>
-                                <td>@item.StockQuantity قطعة</td>
-                                <td class="text-center">
-                                    <a asp-controller="Customizations" asp-action="Manage" asp-route-productId="@item.Id" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bi bi-sliders me-1"></i> التخصيصات
-                                    </a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('هل أنت تأكد من حذف هذا المنتج؟');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف</button>
-                                    </form>
-                                </td>
-                            </tr>
+                        <tr>
+
+                            <!-- الصورة -->
+                            <td>
+                                <img src="@item.MainImage"
+                                     class="rounded"
+                                     style="width: 50px; height: 50px; object-fit: cover;"
+                                     onerror="this.src='/images/products/default.jpg'"
+                                     alt="@item.Name" />
+                            </td>
+
+                            <!-- اسم المنتج -->
+                            <td class="fw-bold">
+                                @item.Name
+                            </td>
+
+                            <!-- التصنيف -->
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    @item.Category?.Name
+                                </span>
+                            </td>
+
+                            <!-- السعر -->
+                            <td class="text-primary fw-bold">
+                                @item.BasePrice.ToString("N0") ج.م
+                            </td>
+
+                            <!-- المخزون -->
+                            <td>
+
+                                @if (item.StockQuantity == 0)
+                                    {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    نفد المخزون
+                                </span>
+                                    }
+                                    else if (item.StockQuantity <= 5)
+                                    {
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    @item.StockQuantity قطعة
+                                    - مخزون منخفض
+                                </span>
+                                    }
+                                    else
+                                    {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    @item.StockQuantity قطعة
+                                </span>
+                                    }
+
+                            </td>
+
+                            <!-- الإجراءات -->
+                            <td class="text-center">
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-secondary me-1">
+
+                                    <i class="bi bi-pencil-square me-1"></i>
+                                    تعديل
+
+                                </a>
+
+                                <a asp-controller="Customizations"
+                                   asp-action="Manage"
+                                   asp-route-productId="@item.Id"
+                                   class="btn btn-sm btn-outline-primary me-1">
+
+                                    <i class="bi bi-sliders me-1"></i>
+                                    التخصيصات
+
+                                </a>
+
+                                <form asp-action="Delete"
+                                      asp-route-id="@item.Id"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا المنتج؟');">
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger">
+
+                                        <i class="bi bi-trash"></i>
+                                        حذف
+
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
                         }
                     }
-                </tbody>
-            </table>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
         </div>
+
     </div>
-</div>

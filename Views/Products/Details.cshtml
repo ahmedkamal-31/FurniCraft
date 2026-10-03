@@ -5,86 +5,345 @@
 
 <div class="container my-5">
     <div class="row g-5">
+
         <!-- صورة المنتج -->
         <div class="col-md-6">
             <div class="fc-card p-2 sticky-top" style="top: 100px;">
-                <img src="@Model.MainImage" class="img-fluid rounded w-100" style="max-height: 480px; object-fit: cover;" alt="@Model.Name" onerror="this.src='/images/products/default.jpg'" />
+                <img src="@Model.MainImage"
+                     class="img-fluid rounded w-100"
+                     style="max-height: 480px; object-fit: cover;"
+                     alt="@Model.Name"
+                     onerror="this.src='/images/products/default.jpg'" />
             </div>
         </div>
 
         <!-- تفاصيل وخيارات التخصيص -->
         <div class="col-md-6">
             <form asp-controller="Cart" asp-action="AddToCart" method="post">
+
                 <input type="hidden" name="productId" value="@Model.Id" />
 
-                <span class="badge bg-light text-dark mb-2">@Model.Category?.Name</span>
-                <h2 class="fw-bold mb-2">@Model.Name</h2>
-                <p class="text-muted mb-3">@Model.Description</p>
+                <span class="badge bg-light text-dark mb-2">
+                    @Model.Category?.Name
+                </span>
 
-                <div class="p-3 rounded mb-4" style="background-color: var(--fc-sand); border-right: 4px solid var(--fc-primary);">
-                    <span class="text-muted small d-block">السعر الكلي للتصميم المختار:</span>
-                    <span class="fs-2 fw-bold text-primary" id="totalPriceDisplay">@Model.BasePrice.ToString("N0")</span> <span class="fw-bold text-primary">ج.م</span>
-                    <span class="text-muted small ms-2">(السعر الأساسي: @Model.BasePrice.ToString("N0") ج.م)</span>
+                <h2 class="fw-bold mb-2">@Model.Name</h2>
+
+                <p class="text-muted mb-3">
+                    @Model.Description
+                </p>
+
+                <!-- السعر -->
+                <div class="p-3 rounded mb-4"
+                     style="background-color: var(--fc-sand); border-right: 4px solid var(--fc-primary);">
+
+                    <span class="text-muted small d-block">
+                        سعر القطعة:
+                    </span>
+
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span class="fs-2 fw-bold text-primary" id="unitPriceDisplay">
+                            @Model.BasePrice.ToString("N0")
+                        </span>
+
+                        <span class="fw-bold text-primary">
+                            ج.م
+                        </span>
+                    </div>
+
+                    <div class="mt-2">
+                        <span class="text-muted small">
+                            الإجمالي:
+                        </span>
+
+                        <span class="fs-4 fw-bold text-dark" id="totalPriceDisplay">
+                            @Model.BasePrice.ToString("N0")
+                        </span>
+
+                        <span class="fw-bold text-dark">
+                            ج.م
+                        </span>
+                    </div>
                 </div>
 
-                <!-- خيارات التخصيص الديناميكية -->
+                <!-- خيارات التخصيص -->
                 @if (Model.CustomizationGroups != null && Model.CustomizationGroups.Any())
                 {
-                    <div class="fc-card p-4 mb-4">
-                        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2 text-primary"></i>تخصيصات واستبدالات القطعة</h5>
-                        
-                        @foreach (var group in Model.CustomizationGroups)
+                <div class="fc-card p-4 mb-4">
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">
+                        <i class="bi bi-sliders me-2 text-primary"></i>
+                        تخصيصات واستبدالات القطعة
+                    </h5>
+
+                    @foreach (var group in Model.CustomizationGroups)
                         {
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-dark mb-2">@group.Name</label>
-                                <div class="d-flex flex-column gap-2">
-                                    @{ var isFirst = true; }
-                                    @foreach (var opt in group.Options)
+                    <div class="mb-4">
+
+                        <label class="form-label fw-bold small text-dark mb-2">
+                            @group.Name
+                        </label>
+
+                        <div class="d-flex flex-column gap-2">
+
+                            @{
+                                        var isFirst = true;
+                            }
+
+                            @foreach (var opt in group.Options)
                                     {
-                                        <label class="border rounded p-2 px-3 d-flex justify-content-between align-items-center cursor-pointer customization-option-label" style="cursor: pointer;">
-                                            <div>
-                                                <input type="radio" name="selectedOptionIds" value="@opt.Id" data-price="@opt.AdditionalPrice" class="form-check-input me-2 option-radio" @(isFirst ? "checked" : "") />
-                                                <span>@opt.Name</span>
-                                            </div>
-                                            <span class="badge bg-light text-success fw-bold">+@opt.AdditionalPrice.ToString("N0") ج.م</span>
-                                        </label>
+                            <label class="border rounded p-2 px-3 d-flex justify-content-between align-items-center customization-option-label"
+                                   style="cursor: pointer;">
+
+                                <div>
+                                    <input type="radio"
+                                           name="selectedOptionIds"
+                                           value="@opt.Id"
+                                           data-price="@opt.AdditionalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           class="form-check-input me-2 option-radio"
+                                           @(isFirst ? "checked" : "") />
+
+                                    <span>@opt.Name</span>
+                                </div>
+
+                                <span class="badge bg-light text-success fw-bold">
+                                    +@opt.AdditionalPrice.ToString("N0") ج.م
+                                </span>
+
+                            </label>
+
                                         isFirst = false;
                                     }
-                                </div>
-                            </div>
-                        }
+
+                        </div>
                     </div>
+                        }
+
+                </div>
                 }
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-fc-primary btn-lg" @(Model.StockQuantity <= 0 ? "disabled" : "")>
-                        <i class="bi bi-bag-plus me-2"></i> إضافة للسلة بالتصميم المحدد
-                    </button>
-                    <a asp-action="Index" class="btn btn-fc-outline"><i class="bi bi-arrow-right me-1"></i> العودة للمتجر</a>
+                <!-- اختيار الكمية -->
+                <div class="fc-card p-4 mb-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                        <label class="fw-bold mb-0">
+                            <i class="bi bi-box-seam me-2 text-primary"></i>
+                            الكمية
+                        </label>
+
+                        <span class="text-muted small">
+                            المتاح: @Model.StockQuantity قطعة
+                        </span>
+
+                    </div>
+
+                    @if (Model.StockQuantity > 0)
+                    {
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+
+                        <button type="button"
+                                class="btn btn-fc-outline quantity-btn"
+                                id="decreaseQuantity">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+
+                        <input type="number"
+                               id="quantityInput"
+                               name="quantity"
+                               value="1"
+                               min="1"
+                               max="@Model.StockQuantity"
+                               class="form-control text-center fw-bold"
+                               style="width: 90px; font-size: 1.1rem;" />
+
+                        <button type="button"
+                                class="btn btn-fc-outline quantity-btn"
+                                id="increaseQuantity">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+
+                    </div>
+
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            يمكنك طلب حتى @Model.StockQuantity قطعة
+                        </small>
+                    </div>
+                    }
+                    else
+                    {
+                    <div class="alert alert-warning mb-0 text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        هذا المنتج غير متوفر حالياً.
+                    </div>
+                    }
+
                 </div>
+
+                <!-- الأزرار -->
+                <div class="d-grid gap-2">
+
+                    <button type="submit"
+                            class="btn btn-fc-primary btn-lg"
+                            @(Model.StockQuantity <= 0 ? "disabled" : "")>
+
+                        <i class="bi bi-bag-plus me-2"></i>
+                        إضافة للسلة
+
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn btn-fc-outline">
+
+                        <i class="bi bi-arrow-right me-1"></i>
+                        العودة للمتجر
+
+                    </a>
+
+                </div>
+
             </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        const basePrice = parseFloat("@Model.BasePrice");
 
-        function calculateTotalPrice() {
-            let total = basePrice;
-            const selectedRadios = document.querySelectorAll('.option-radio:checked');
+    <script>
+
+        const basePrice = parseFloat(
+            "@Model.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+        );
+
+        const quantityInput = document.getElementById("quantityInput");
+        const totalPriceDisplay = document.getElementById("totalPriceDisplay");
+        const unitPriceDisplay = document.getElementById("unitPriceDisplay");
+
+        function getUnitPrice() {
+
+            let unitPrice = basePrice;
+
+            const selectedRadios =
+                document.querySelectorAll(".option-radio:checked");
+
             selectedRadios.forEach(radio => {
-                total += parseFloat(radio.getAttribute('data-price') || 0);
+
+                unitPrice += parseFloat(
+                    radio.getAttribute("data-price") || "0"
+                );
+
             });
 
-            document.getElementById('totalPriceDisplay').innerText = total.toLocaleString('en-US');
+            return unitPrice;
         }
 
-        document.querySelectorAll('.option-radio').forEach(radio => {
-            radio.addEventListener('change', calculateTotalPrice);
+        function calculateTotalPrice() {
+
+            const unitPrice = getUnitPrice();
+
+            let quantity = 1;
+
+            if (quantityInput) {
+                quantity = parseInt(quantityInput.value) || 1;
+            }
+
+            const totalPrice = unitPrice * quantity;
+
+            if (unitPriceDisplay) {
+                unitPriceDisplay.innerText =
+                    unitPrice.toLocaleString("en-US");
+            }
+
+            if (totalPriceDisplay) {
+                totalPriceDisplay.innerText =
+                    totalPrice.toLocaleString("en-US");
+            }
+        }
+
+        // تغيير التخصيص
+        document.querySelectorAll(".option-radio").forEach(radio => {
+
+            radio.addEventListener("change", calculateTotalPrice);
+
         });
 
+        // زيادة الكمية
+        const increaseButton =
+            document.getElementById("increaseQuantity");
+
+        if (increaseButton) {
+
+            increaseButton.addEventListener("click", function () {
+
+                const max =
+                    parseInt(quantityInput.max);
+
+                let quantity =
+                    parseInt(quantityInput.value) || 1;
+
+                if (quantity < max) {
+                    quantity++;
+                    quantityInput.value = quantity;
+                    calculateTotalPrice();
+                }
+
+            });
+
+        }
+
+        // تقليل الكمية
+        const decreaseButton =
+            document.getElementById("decreaseQuantity");
+
+        if (decreaseButton) {
+
+            decreaseButton.addEventListener("click", function () {
+
+                let quantity =
+                    parseInt(quantityInput.value) || 1;
+
+                if (quantity > 1) {
+                    quantity--;
+                    quantityInput.value = quantity;
+                    calculateTotalPrice();
+                }
+
+            });
+
+        }
+
+        // لو المستخدم كتب الكمية بإيده
+        if (quantityInput) {
+
+            quantityInput.addEventListener("input", function () {
+
+                let quantity =
+                    parseInt(this.value) || 1;
+
+                const min =
+                    parseInt(this.min);
+
+                const max =
+                    parseInt(this.max);
+
+                if (quantity < min) {
+                    quantity = min;
+                }
+
+                if (quantity > max) {
+                    quantity = max;
+                }
+
+                this.value = quantity;
+
+                calculateTotalPrice();
+
+            });
+
+        }
+
         calculateTotalPrice();
+
     </script>
 }
