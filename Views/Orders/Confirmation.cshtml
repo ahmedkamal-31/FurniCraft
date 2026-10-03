@@ -1,0 +1,27 @@
+﻿@model FurniCraft.Models.Order
+@{
+    ViewData["Title"] = "تأكيد الطلب #" + Model.OrderNumber;
+}
+
+<div class="container my-5 text-center">
+    <div class="fc-card p-5 mx-auto" style="max-width: 700px;">
+        <div class="mb-3">
+            <i class="bi bi-check-circle-fill text-success display-1"></i>
+        </div>
+        <h2 class="fw-bold mb-2">تم استلام طلبك بنجاح!</h2>
+        <p class="text-muted mb-4">شكراً لثقتك بـ FurniCraft. رقم طلبك هو <strong class="text-primary">#@Model.OrderNumber</strong></p>
+
+        <div class="bg-light p-3 rounded text-start mb-4">
+            <h6 class="fw-bold mb-2 border-bottom pb-2">تفاصيل التوصيل:</h6>
+            <p class="mb-1"><strong>الاسم:</strong> @Model.CustomerName</p>
+            <p class="mb-1"><strong>رقم الهاتف:</strong> @Model.Phone</p>
+            <p class="mb-1"><strong>العنوان:</strong> @Model.City - @Model.Address</p>
+            <p class="mb-0"><strong>إجمالي المبلغ المطلـوب:</strong> <span class="text-primary fw-bold">@Model.TotalAmount.ToString("N0") ج.م</span> (دفع عند الاستلام)</p>
+        </div>
+
+        <div class="d-flex gap-3 justify-content-center">
+            <a asp-action="MyOrders" class="btn btn-fc-primary"><i class="bi bi-list-task me-1"></i> متابعة طلباتي</a>
+            <a asp-controller="Products" asp-action="Index" class="btn btn-fc-outline"><i class="bi bi-shop me-1"></i> العودة للمتجر</a>
+        </div>
+    </div>
+</div>

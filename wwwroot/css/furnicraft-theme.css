@@ -1,0 +1,124 @@
+﻿/* FurniCraft Premium Furniture Theme */
+:root {
+    --fc-primary: #8C6D53;        /* Warm Wood/Beige */
+    --fc-primary-hover: #735741;
+    --fc-dark: #2B2B2B;           /* Charcoal Dark Gray */
+    --fc-light-bg: #FAF8F5;       /* Cream / Off-white */
+    --fc-card-bg: #FFFFFF;
+    --fc-accent: #D4A373;         /* Muted Gold/Wood */
+    --fc-border: #E8E2D9;
+    --fc-text-muted: #6C757D;
+    --fc-radius: 12px;
+    --fc-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    --fc-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: var(--fc-light-bg);
+    color: var(--fc-dark);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Navbar Style */
+.fc-navbar {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--fc-border);
+    padding: 0.8rem 0;
+    transition: all 0.3s ease;
+}
+
+.fc-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--fc-dark) !important;
+    letter-spacing: -0.5px;
+}
+
+.fc-brand span {
+    color: var(--fc-primary);
+}
+
+.nav-link {
+    color: var(--fc-dark) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--fc-primary) !important;
+}
+
+/* Custom Buttons */
+.btn-fc-primary {
+    background-color: var(--fc-primary);
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: var(--fc-radius);
+    padding: 0.6rem 1.4rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-fc-primary:hover {
+    background-color: var(--fc-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(140, 109, 83, 0.3);
+}
+
+.btn-fc-outline {
+    background-color: transparent;
+    color: var(--fc-primary) !important;
+    border: 1.5px solid var(--fc-primary);
+    border-radius: var(--fc-radius);
+    padding: 0.55rem 1.3rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-fc-outline:hover {
+    background-color: var(--fc-primary);
+    color: #FFFFFF !important;
+}
+
+/* Cards & UI Container */
+.fc-card {
+    background: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+    box-shadow: var(--fc-shadow);
+    transition: all 0.3s ease;
+}
+
+.fc-card:hover {
+    box-shadow: var(--fc-shadow-hover);
+}
+
+/* Footer Style */
+.fc-footer {
+    background-color: #23211E;
+    color: #D1CDC7;
+    margin-top: auto;
+    border-top: 1px solid #3A3632;
+}
+
+.fc-footer a {
+    color: #D1CDC7;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.fc-footer a:hover {
+    color: var(--fc-accent);
+}
+
+.fc-footer-heading {
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}

@@ -1,0 +1,53 @@
+﻿@model IEnumerable<FurniCraft.Models.Order>
+@{
+    ViewData["Title"] = "إدارة الطلبات";
+}
+
+<div class="container my-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-receipt-cutoff text-primary me-2"></i>إدارة طلبات العملاء</h2>
+
+    <div class="fc-card p-3">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>الهاتف / المدينة</th>
+                        <th>المبلغ الإجمالي</th>
+                        <th>التاريخ</th>
+                        <th>الحالة الحالية</th>
+                        <th>تغيير الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold text-primary">#@order.OrderNumber</td>
+                            <td>@order.CustomerName</td>
+                            <td class="small">@order.Phone <br /><span class="text-muted">@order.City</span></td>
+                            <td class="fw-bold text-success">@order.TotalAmount.ToString("N0") ج.م</td>
+                            <td class="small text-muted">@order.OrderDate.ToLocalTime().ToString("yyyy/MM/dd")</td>
+                            <td>
+                                <span class="badge bg-info text-dark">@order.Status</span>
+                            </td>
+                            <td>
+                                <form asp-action="UpdateStatus" method="post" class="d-flex gap-1">
+                                    <input type="hidden" name="orderId" value="@order.Id" />
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="Pending" selected="@(order.Status == "Pending")">قيد الانتظار (Pending)</option>
+                                        <option value="Processing" selected="@(order.Status == "Processing")">قيد التحضير (Processing)</option>
+                                        <option value="Shipped" selected="@(order.Status == "Shipped")">تم الشحن (Shipped)</option>
+                                        <option value="Delivered" selected="@(order.Status == "Delivered")">تم التسليم (Delivered)</option>
+                                        <option value="Cancelled" selected="@(order.Status == "Cancelled")">ملغي (Cancelled)</option>
+                                    </select>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

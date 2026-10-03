@@ -1,0 +1,90 @@
+﻿@model FurniCraft.Models.Product
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container my-5">
+    <div class="row g-5">
+        <!-- صورة المنتج -->
+        <div class="col-md-6">
+            <div class="fc-card p-2 sticky-top" style="top: 100px;">
+                <img src="@Model.MainImage" class="img-fluid rounded w-100" style="max-height: 480px; object-fit: cover;" alt="@Model.Name" onerror="this.src='/images/products/default.jpg'" />
+            </div>
+        </div>
+
+        <!-- تفاصيل وخيارات التخصيص -->
+        <div class="col-md-6">
+            <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                <input type="hidden" name="productId" value="@Model.Id" />
+
+                <span class="badge bg-light text-dark mb-2">@Model.Category?.Name</span>
+                <h2 class="fw-bold mb-2">@Model.Name</h2>
+                <p class="text-muted mb-3">@Model.Description</p>
+
+                <div class="p-3 rounded mb-4" style="background-color: var(--fc-sand); border-right: 4px solid var(--fc-primary);">
+                    <span class="text-muted small d-block">السعر الكلي للتصميم المختار:</span>
+                    <span class="fs-2 fw-bold text-primary" id="totalPriceDisplay">@Model.BasePrice.ToString("N0")</span> <span class="fw-bold text-primary">ج.م</span>
+                    <span class="text-muted small ms-2">(السعر الأساسي: @Model.BasePrice.ToString("N0") ج.م)</span>
+                </div>
+
+                <!-- خيارات التخصيص الديناميكية -->
+                @if (Model.CustomizationGroups != null && Model.CustomizationGroups.Any())
+                {
+                    <div class="fc-card p-4 mb-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2 text-primary"></i>تخصيصات واستبدالات القطعة</h5>
+                        
+                        @foreach (var group in Model.CustomizationGroups)
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-dark mb-2">@group.Name</label>
+                                <div class="d-flex flex-column gap-2">
+                                    @{ var isFirst = true; }
+                                    @foreach (var opt in group.Options)
+                                    {
+                                        <label class="border rounded p-2 px-3 d-flex justify-content-between align-items-center cursor-pointer customization-option-label" style="cursor: pointer;">
+                                            <div>
+                                                <input type="radio" name="selectedOptionIds" value="@opt.Id" data-price="@opt.AdditionalPrice" class="form-check-input me-2 option-radio" @(isFirst ? "checked" : "") />
+                                                <span>@opt.Name</span>
+                                            </div>
+                                            <span class="badge bg-light text-success fw-bold">+@opt.AdditionalPrice.ToString("N0") ج.م</span>
+                                        </label>
+                                        isFirst = false;
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-fc-primary btn-lg" @(Model.StockQuantity <= 0 ? "disabled" : "")>
+                        <i class="bi bi-bag-plus me-2"></i> إضافة للسلة بالتصميم المحدد
+                    </button>
+                    <a asp-action="Index" class="btn btn-fc-outline"><i class="bi bi-arrow-right me-1"></i> العودة للمتجر</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const basePrice = parseFloat("@Model.BasePrice");
+
+        function calculateTotalPrice() {
+            let total = basePrice;
+            const selectedRadios = document.querySelectorAll('.option-radio:checked');
+            selectedRadios.forEach(radio => {
+                total += parseFloat(radio.getAttribute('data-price') || 0);
+            });
+
+            document.getElementById('totalPriceDisplay').innerText = total.toLocaleString('en-US');
+        }
+
+        document.querySelectorAll('.option-radio').forEach(radio => {
+            radio.addEventListener('change', calculateTotalPrice);
+        });
+
+        calculateTotalPrice();
+    </script>
+}

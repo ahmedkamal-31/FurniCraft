@@ -1,0 +1,48 @@
+﻿@model FurniCraft.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "تسجيل الدخول";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="fc-card p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">مرحباً بعودتك</h3>
+                    <p class="text-muted small">قم بتسجيل الدخول لمتابعة مشترياتك وتخصيصاتك</p>
+                </div>
+
+                <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label small fw-semibold"></label>
+                        <input asp-for="Email" class="form-control form-control-lg fs-6" placeholder="example@domain.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label small fw-semibold"></label>
+                        <input asp-for="Password" class="form-control form-control-lg fs-6" placeholder="••••••••" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label small"></label>
+                    </div>
+
+                    <button type="submit" class="btn btn-fc-primary w-100 py-2 fs-6 mb-3">دخول</button>
+                </form>
+
+                <div class="text-center mt-3 pt-3 border-top">
+                    <p class="small mb-0">ليس لديك حساب؟ <a asp-action="Register" class="text-decoration-none fw-bold text-primary">أنشئ حساباً الآن</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,72 @@
+﻿@model FurniCraft.ViewModels.ProductFilterViewModel
+@{
+    ViewData["Title"] = "المتجر - الأثاث";
+}
+
+<div class="container my-4">
+    <!-- Search & Filter Bar -->
+    <div class="fc-card p-3 mb-4">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="ابحث عن أثاث..." />
+            </div>
+            <div class="col-md-3">
+                <select name="categoryId" class="form-select">
+                    <option value="">جميع التصنيفات</option>
+                    @foreach (var cat in Model.Categories)
+                    {
+                        if (Model.SelectedCategoryId == cat.Id)
+                        {
+                            <option value="@cat.Id" selected>@cat.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sortBy" class="form-select">
+                    <option value="default">الترتيب الافتراضي</option>
+                    <option value="price_asc">السعر: من الأقل للأعلى</option>
+                    <option value="price_desc">السعر: من الأعلى للأقل</option>
+                    <option value="newest">الأحدث وصل حديثاً</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-fc-primary w-100"><i class="bi bi-search me-1"></i> تصفية</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        @if (!Model.Products.Any())
+        {
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-box-seam display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">لا توجد منتجات مطابقة لخيارات البحث</h4>
+            </div>
+        }
+        else
+        {
+            @foreach (var product in Model.Products)
+            {
+                <div class="col">
+                    <div class="card fc-card h-100 border-0 overflow-hidden">
+                        <img src="@product.MainImage" class="card-img-top" style="height: 220px; object-fit: cover;" alt="@product.Name" onerror="this.src='/images/products/default.jpg'" />
+                        <div class="card-body d-flex flex-column p-3">
+                            <span class="badge bg-light text-dark align-self-start mb-2">@product.Category?.Name</span>
+                            <h6 class="card-title fw-bold text-truncate mb-1">@product.Name</h6>
+                            <p class="card-text text-primary fw-bold fs-5 mb-3">@product.BasePrice.ToString("N0") ج.م</p>
+                            <div class="mt-auto d-flex gap-2">
+                                <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-fc-outline btn-sm w-100">التفاصيل والتخصيص</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

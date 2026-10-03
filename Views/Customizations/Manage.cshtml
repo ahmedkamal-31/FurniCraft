@@ -1,0 +1,111 @@
+﻿@model FurniCraft.Models.Product
+@{
+    ViewData["Title"] = "إدارة تخصيصات - " + Model.Name;
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-sliders text-primary me-2"></i>تخصيصات المنتج: @Model.Name</h2>
+            <span class="text-muted small">السعر الأساسي: @Model.BasePrice.ToString("N0") ج.م</span>
+        </div>
+        <a asp-controller="Products" asp-action="AdminIndex" class="btn btn-fc-outline btn-sm"><i class="bi bi-arrow-right me-1"></i> العودة للمنتجات</a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Form لإضافة مجموعة تخصيص جديدة -->
+        <div class="col-md-4">
+            <div class="fc-card p-4">
+                <h5 class="fw-bold mb-3">إضافة مجموعة تخصيص جديدة</h5>
+                <form asp-action="CreateGroup" method="post">
+                    <input type="hidden" name="ProductId" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">اسم المجموعة</label>
+                        <input type="text" name="Name" class="form-control" placeholder="مثال: نوع القماش، لون الخشب" required />
+                    </div>
+                    <button type="submit" class="btn btn-fc-primary w-100"><i class="bi bi-plus-lg me-1"></i> إضافة المجموعة</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- عرض المجموعات والخيارات الحالية -->
+        <div class="col-md-8">
+            @if (!Model.CustomizationGroups.Any())
+            {
+                <div class="fc-card p-5 text-center text-muted">
+                    <i class="bi bi-sliders display-4 mb-3 d-block"></i>
+                    لا توجد مجموعات تخصيص لهذا المنتج حالياً. أضف مجموعة جديدة البدء.
+                </div>
+            }
+            else
+            {
+                @foreach (var group in Model.CustomizationGroups)
+                {
+                    <div class="fc-card p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-collection me-2"></i>@group.Name</h5>
+                            <form asp-action="DeleteGroup" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذه المجموعة بالكامل؟');">
+                                <input type="hidden" name="id" value="@group.Id" />
+                                <input type="hidden" name="productId" value="@Model.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> حذف المجموعة</button>
+                            </form>
+                        </div>
+
+                        <!-- قائمة الخيارات الحالية -->
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>اسم الخيار</th>
+                                        <th>السعر الإضافي</th>
+                                        <th class="text-center" style="width: 80px;">حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!group.Options.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted small py-2">لا توجد خيارات في هذه المجموعة بعد.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var opt in group.Options)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@opt.Name</td>
+                                                <td class="text-success fw-bold">+@opt.AdditionalPrice.ToString("N0") ج.م</td>
+                                                <td class="text-center">
+                                                    <form asp-action="DeleteOption" method="post" onsubmit="return confirm('حذف الخيار؟');">
+                                                        <input type="hidden" name="id" value="@opt.Id" />
+                                                        <input type="hidden" name="productId" value="@Model.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-circle-fill"></i></button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Form إضافة خيار داخل المجموعة -->
+                        <form asp-action="CreateOption" method="post" class="row g-2 align-items-center bg-light p-2 rounded">
+                            <input type="hidden" name="GroupId" value="@group.Id" />
+                            <input type="hidden" name="productId" value="@Model.Id" />
+                            <div class="col-md-6">
+                                <input type="text" name="Name" class="form-control form-control-sm" placeholder="اسم الخيار (مثال: قماش مخمل أسود)" required />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" step="0.01" name="AdditionalPrice" class="form-control form-control-sm" placeholder="السعر الإضافي" required />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-fc-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> إضافة</button>
+                            </div>
+                        </form>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

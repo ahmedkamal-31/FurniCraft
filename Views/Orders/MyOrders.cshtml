@@ -1,0 +1,58 @@
+﻿@model IEnumerable<FurniCraft.Models.Order>
+@{
+    ViewData["Title"] = "طلباتي";
+}
+
+<div class="container my-5">
+    <h2 class="fw-bold mb-4"><i class="bi bi-bag-check text-primary me-2"></i>سجل طلباتي</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="fc-card p-5 text-center text-muted">
+            <i class="bi bi-inbox display-3 mb-3 d-block"></i>
+            لم تقم بإنشاء أي طلبات بعد.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var order in Model)
+            {
+                <div class="col-12">
+                    <div class="fc-card p-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1">طلب رقم #@order.OrderNumber</h5>
+                                <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>@order.OrderDate.ToLocalTime().ToString("yyyy/MM/dd - hh:mm tt")</span>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary px-3 py-2 fs-6">@order.Status</span>
+                                <span class="fs-5 fw-bold text-success ms-3">@order.TotalAmount.ToString("N0") ج.م</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <h6 class="fw-bold small text-muted mb-2">المنتجات المطلوبة:</h6>
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var item in order.Items)
+                                    {
+                                        <li class="list-group-item bg-transparent px-0 py-1">
+                                            <span class="fw-bold">@item.Quantity x</span> @item.Product?.Name
+                                            <span class="text-muted small ms-2">(@item.UnitPrice.ToString("N0") ج.م للقطعة)</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="col-md-4 border-start">
+                                <h6 class="fw-bold small text-muted mb-2">عنوان التوصيل:</h6>
+                                <p class="small mb-1">@order.CustomerName - @order.Phone</p>
+                                <p class="small mb-0 text-muted">@order.City، @order.Address</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
