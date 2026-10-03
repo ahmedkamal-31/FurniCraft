@@ -1,4 +1,4 @@
-using FurniCraft.Data;
+﻿using FurniCraft.Data;
 using FurniCraft.Models;
 using FurniCraft.Services;
 using FurniCraft.ViewModels;
@@ -327,6 +327,10 @@ namespace FurniCraft.Controllers
         }
 
         // 5. ????? ??????? ??? Admin
+        // ==========================================
+        // Admin - إدارة الطلبات
+        // ==========================================
+
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> AdminIndex()
@@ -339,7 +343,33 @@ namespace FurniCraft.Controllers
             return View(orders);
         }
 
-        // 6. ????? ???? ????? ?? ??? Admin
+        // ==========================================
+        // Admin - تفاصيل الطلب
+        // ==========================================
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Customizations)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return View(order);
+        }
+
+        // ==========================================
+        // Admin - تغيير حالة الطلب
+        // ==========================================
+
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -347,14 +377,31 @@ namespace FurniCraft.Controllers
             int orderId,
             string status)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.Id == orderId);
 
-            if (order != null)
+            if (order == null)
             {
-                order.Status = status;
-
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
+
+            var allowedStatuses = new[]
+            {
+                "Pending",
+                "Processing",
+                "Shipped",
+                "Delivered",
+                "Cancelled"
+            };
+
+            if (!allowedStatuses.Contains(status))
+            {
+                return BadRequest();
+            }
+
+            order.Status = status;
+
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(AdminIndex));
         }
