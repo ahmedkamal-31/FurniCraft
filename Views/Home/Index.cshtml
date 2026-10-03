@@ -1,8 +1,501 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using FurniCraft.Models
+
+@{
+    ViewData["Title"] = "الرئيسية";
+
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+    var featuredProducts = ViewBag.FeaturedProducts as List<Product> ?? new List<Product>();
+
+    var heroProduct = featuredProducts.FirstOrDefault();
+
+    const string defaultImage = "/images/products/default.jpg";
+
+    // View-only helpers (no back-end change)
+    string ImageOrDefault(string url) => string.IsNullOrWhiteSpace(url) ? defaultImage : url;
+
+    // ---- Category pictures --------------------------------------------
+    // 1) the category's own image (ignored if several categories share the same one)
+    // 2) a photo of a featured product in that category
+    // 3) an illustrated placeholder that matches the category name
+    var sharedImages = categories
+        .Where(c => !string.IsNullOrWhiteSpace(c.ImageUrl))
+        .GroupBy(c => c.ImageUrl)
+        .Where(g => g.Count() > 1)
+        .Select(g => g.Key)
+        .ToList();
+
+    string CategoryKey(string name)
+    {
+        var n = (name ?? "").ToLowerInvariant();
+
+        return
+            n.Contains("bed") || n.Contains("سرير") || n.Contains("سراير") || n.Contains("نوم") ? "beds" :
+            n.Contains("storage") || n.Contains("drawer") || n.Contains("cabinet") || n.Contains("تخزين") || n.Contains("دولاب") || n.Contains("خزان") ? "storage" :
+            n.Contains("table") || n.Contains("ترابيز") || n.Contains("طاول") ? "tables" :
+            n.Contains("chair") || n.Contains("كرسي") || n.Contains("كراسي") ? "chairs" :
+            n.Contains("seat") || n.Contains("sofa") || n.Contains("couch") || n.Contains("كنب") || n.Contains("أريك") || n.Contains("اريك") || n.Contains("جلوس") ? "seating" :
+            "default";
+    }
+
+    string CategoryPlaceholder(string name) => "/images/categories/" + CategoryKey(name) + ".svg";
+
+    // Used when the chosen picture fails to load (missing file / broken path).
+    // The default picture is a coffee table, so only Tables may use it.
+    string CategoryFallback(string name) =>
+        CategoryKey(name) == "tables" ? defaultImage : CategoryPlaceholder(name);
+
+    string CategoryImage(Category category)
+    {
+        if (!string.IsNullOrWhiteSpace(category.ImageUrl)
+            && category.ImageUrl != defaultImage
+            && !sharedImages.Contains(category.ImageUrl))
+        {
+            return category.ImageUrl;
+        }
+
+        var product = featuredProducts.FirstOrDefault(p =>
+            p.Category != null && p.Category.Id == category.Id && !string.IsNullOrWhiteSpace(p.MainImage));
+
+        if (product != null) return product.MainImage;
+
+        // The site's default picture is a coffee table, so it suits the Tables category
+        if (CategoryKey(category.Name) == "tables") return defaultImage;
+
+        return CategoryPlaceholder(category.Name);
+    }
+
+    string Shorten(string text, int max)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        text = text.Trim();
+        return text.Length <= max ? text : text.Substring(0, max).TrimEnd() + "…";
+    }
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- =========================
+     HERO SECTION
+========================= -->
+<section class="fc-hero" aria-labelledby="hero-title">
+    <div class="container">
+        <div class="row align-items-center g-5">
+
+            <!-- Hero Content -->
+            <div class="col-lg-6">
+                <div class="fc-hero-content">
+
+                    <span class="fc-hero-badge">
+                        <i class="bi bi-stars" aria-hidden="true"></i>
+                        FurniCraft
+                    </span>
+
+                    <h1 id="hero-title" class="fc-hero-title">
+                        أثاث يعبر عنك
+                        <span>ويصنع فرقًا في بيتك</span>
+                    </h1>
+
+                    <p class="fc-hero-description">
+                        اكتشف تشكيلة مختارة من الأثاث العصري والأنيق،
+                        المصمم ليضيف لمسة مميزة وراحة حقيقية لكل مساحة في منزلك.
+                    </p>
+
+                    <div class="fc-hero-actions">
+                        <a asp-controller="Products"
+                           asp-action="Index"
+                           class="btn btn-fc-primary btn-lg">
+                            <i class="bi bi-bag me-2" aria-hidden="true"></i>
+                            تصفح المنتجات
+                        </a>
+
+                        <a href="#categories"
+                           class="btn btn-fc-outline btn-lg">
+                            استكشف التصنيفات
+                            <i class="bi bi-arrow-down ms-2" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                    <!-- Small Stats -->
+                    <div class="fc-hero-stats">
+                        <div>
+                            <strong>+100</strong>
+                            <span>منتج مميز</span>
+                        </div>
+
+                        <div class="fc-stat-divider" aria-hidden="true"></div>
+
+                        <div>
+                            <strong>+50</strong>
+                            <span>عميل سعيد</span>
+                        </div>
+
+                        <div class="fc-stat-divider" aria-hidden="true"></div>
+
+                        <div>
+                            <strong>100%</strong>
+                            <span>جودة</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Hero Image -->
+            <div class="col-lg-6">
+                <div class="fc-hero-image-wrapper">
+
+                    <div class="fc-hero-decoration fc-decoration-one" aria-hidden="true"></div>
+                    <div class="fc-hero-decoration fc-decoration-two" aria-hidden="true"></div>
+
+                    <div class="fc-hero-image-card">
+
+                        <img src="@ImageOrDefault(heroProduct?.MainImage)"
+                             alt="@(heroProduct != null ? heroProduct.Name : "FurniCraft Furniture")"
+                             class="fc-hero-image"
+                             fetchpriority="high"
+                             decoding="async"
+                             onerror="this.onerror=null;this.src='@defaultImage';" />
+
+                        <div class="fc-hero-floating-card">
+                            <div class="fc-floating-icon">
+                                <i class="bi bi-house-heart" aria-hidden="true"></i>
+                            </div>
+
+                            <div>
+                                <strong>صمم مساحتك</strong>
+                                <span>بطريقتك الخاصة</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================
+     CATEGORIES
+========================= -->
+<section id="categories" class="fc-section" aria-labelledby="categories-title">
+    <div class="container">
+
+        <div class="fc-section-header">
+
+            <div>
+                <span class="fc-section-eyebrow">
+                    اكتشف مجموعتنا
+                </span>
+
+                <h2 id="categories-title" class="fc-section-title">
+                    تسوق حسب التصنيف
+                </h2>
+            </div>
+
+            <a asp-controller="Products"
+               asp-action="Index"
+               class="fc-view-all">
+                عرض كل المنتجات
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+
+        </div>
+
+        @if (categories.Any())
+        {
+        <div class="row g-4 justify-content-center">
+
+            @foreach (var category in categories)
+                {
+            <div class="col-6 col-md-4 col-lg-2">
+
+                <a asp-controller="Products"
+                   asp-action="Index"
+                   asp-route-categoryId="@category.Id"
+                   class="fc-category-card"
+                   aria-label="تصفح تصنيف @category.Name">
+
+                    <div class="fc-category-image-wrapper">
+
+                        <img src="@CategoryImage(category)"
+                             alt=""
+                             class="fc-category-image"
+                             loading="lazy"
+                             decoding="async"
+                             onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src='@CategoryFallback(category.Name)';}else{this.onerror=null;this.src='@CategoryPlaceholder(category.Name)';}" />
+
+                        <div class="fc-category-overlay" aria-hidden="true">
+                            <i class="bi bi-arrow-left"></i>
+                        </div>
+
+                    </div>
+
+                    <h3>@category.Name</h3>
+
+                </a>
+
+            </div>
+                }
+
+        </div>
+        }
+        else
+        {
+        <div class="fc-empty-state" role="status">
+            <i class="bi bi-grid" aria-hidden="true"></i>
+            <h3>لا توجد تصنيفات حاليًا</h3>
+            <p>سيتم إضافة التصنيفات قريبًا.</p>
+        </div>
+        }
+
+    </div>
+</section>
+
+
+<!-- =========================
+     FEATURED PRODUCTS
+========================= -->
+<section class="fc-section fc-products-section" aria-labelledby="products-title">
+    <div class="container">
+
+        <div class="fc-section-header">
+
+            <div>
+                <span class="fc-section-eyebrow">
+                    اختياراتنا لك
+                </span>
+
+                <h2 id="products-title" class="fc-section-title">
+                    منتجات مميزة
+                </h2>
+            </div>
+
+            <a asp-controller="Products"
+               asp-action="Index"
+               class="fc-view-all">
+                مشاهدة الكل
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+
+        </div>
+
+        @if (featuredProducts.Any())
+        {
+        <div class="row g-4">
+
+            @foreach (var product in featuredProducts)
+                {
+            <div class="col-sm-6 col-lg-3">
+
+                <article class="fc-product-card">
+
+                    <!-- Product Image -->
+                    <div class="fc-product-image-wrapper">
+
+                        @if (product.IsFeatured)
+                                {
+                        <span class="fc-product-badge">
+                            مميز
+                        </span>
+                                }
+
+                        <img src="@ImageOrDefault(product.MainImage)"
+                             alt="@product.Name"
+                             class="fc-product-image"
+                             loading="lazy"
+                             decoding="async"
+                             onerror="this.onerror=null;this.src='@defaultImage';" />
+
+                        <div class="fc-product-overlay">
+
+                            <a asp-controller="Products"
+                               asp-action="Details"
+                               asp-route-id="@product.Id"
+                               class="fc-product-quick-btn"
+                               title="عرض المنتج"
+                               aria-label="عرض @product.Name">
+
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="fc-product-content">
+
+                        @if (product.Category != null)
+                                {
+                        <span class="fc-product-category">
+                            @product.Category.Name
+                        </span>
+                                }
+
+                        <h3 class="fc-product-title">
+                            @product.Name
+                        </h3>
+
+                        @if (!string.IsNullOrWhiteSpace(product.Description))
+                                {
+                        <p class="fc-product-description">
+                            @Shorten(product.Description, 110)
+                        </p>
+                                }
+
+                        <div class="fc-product-bottom">
+
+                            <div class="fc-product-price">
+                                @product.BasePrice.ToString("N0")
+                                <small>ج.م</small>
+                            </div>
+
+                            <a asp-controller="Products"
+                               asp-action="Details"
+                               asp-route-id="@product.Id"
+                               class="fc-product-details"
+                               aria-label="تفاصيل @product.Name">
+                                التفاصيل
+                                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </div>
+                }
+
+        </div>
+        }
+        else
+        {
+        <div class="fc-empty-state" role="status">
+            <i class="bi bi-box-seam" aria-hidden="true"></i>
+            <h3>لا توجد منتجات حاليًا</h3>
+            <p>سيتم إضافة المنتجات قريبًا.</p>
+        </div>
+        }
+
+    </div>
+</section>
+
+
+<!-- =========================
+     WHY FURNICRAFT
+========================= -->
+<section class="fc-features-section" aria-labelledby="features-title">
+    <div class="container">
+
+        <div class="text-center mb-5">
+            <span class="fc-section-eyebrow">
+                لماذا FurniCraft؟
+            </span>
+
+            <h2 id="features-title" class="fc-section-title">
+                تجربة شراء مختلفة
+            </h2>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="fc-feature-card">
+
+                    <div class="fc-feature-icon">
+                        <i class="bi bi-gem" aria-hidden="true"></i>
+                    </div>
+
+                    <h3>جودة مضمونة</h3>
+
+                    <p>
+                        نختار منتجاتنا بعناية لتجمع بين الجودة،
+                        المتانة والتصميم المميز.
+                    </p>
+
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="fc-feature-card">
+
+                    <div class="fc-feature-icon">
+                        <i class="bi bi-palette" aria-hidden="true"></i>
+                    </div>
+
+                    <h3>تصميمات مميزة</h3>
+
+                    <p>
+                        مجموعة متنوعة من التصميمات التي تناسب
+                        مختلف الأذواق والمساحات.
+                    </p>
+
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="fc-feature-card">
+
+                    <div class="fc-feature-icon">
+                        <i class="bi bi-truck" aria-hidden="true"></i>
+                    </div>
+
+                    <h3>تجربة سهلة</h3>
+
+                    <p>
+                        تصفح منتجاتك، اختر ما يناسبك،
+                        وأكمل طلبك بكل سهولة.
+                    </p>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- =========================
+     CTA
+========================= -->
+<section class="fc-cta-section" aria-labelledby="cta-title">
+    <div class="container">
+
+        <div class="fc-cta">
+
+            <div class="fc-cta-content">
+
+                <span class="fc-cta-eyebrow">
+                    ابدأ الآن
+                </span>
+
+                <h2 id="cta-title">
+                    جاهز تغيّر شكل بيتك؟
+                </h2>
+
+                <p>
+                    اكتشف مجموعتنا واختر القطعة التي تكمل
+                    المساحة بالطريقة التي تحبها.
+                </p>
+
+                <a asp-controller="Products"
+                   asp-action="Index"
+                   class="btn btn-light btn-lg fc-cta-btn">
+                    ابدأ التسوق
+                    <i class="bi bi-arrow-left ms-2" aria-hidden="true"></i>
+                </a>
+
+            </div>
+
+            <div class="fc-cta-decoration" aria-hidden="true">
+                <i class="bi bi-lamp"></i>
+            </div>
+
+        </div>
+
+    </div>
+</section>

@@ -1,121 +1,424 @@
-﻿```cshtml
-@model FurniCraft.Models.Product
+﻿@model FurniCraft.Models.Product
+@using System.Text.RegularExpressions
+
+@functions {
+
+    // ------------------------------------------------------------------
+    // View-only helpers that turn one long description string into
+    // organised sections (intro / specs / checklists / paragraphs).
+    // Nothing here touches the database, models or controllers.
+    // ------------------------------------------------------------------
+
+    private class DescSection
+    {
+        public string Title { get; set; } = "";
+        public List<string> Paragraphs { get; } = new List<string>();
+        public List<string> Bullets { get; } = new List<string>();
+        public List<KeyValuePair<string, string>> Specs { get; } = new List<KeyValuePair<string, string>>();
+        public bool HasContent => Paragraphs.Count > 0 || Bullets.Count > 0 || Specs.Count > 0;
+    }
+
+    private static readonly string[] Connectors =
+        { "and", "with", "for", "of", "the", "to", "in", "on", "a", "an", "or", "by", "at", "from", "&" };
+
+    // Headings made of several words can be recognised anywhere in the text
+    private const string PhraseHeadings =
+        @"Why You(?:'|’)ll Love It|Why You Will Love It|Key Features|Care Instructions|What(?:'|’)s Included|Product Details|Product Features";
+
+    // Single-word headings are only recognised at a sentence / line start
+    private const string WordHeadings =
+        @"Dimensions|Specifications|Features|Materials|Benefits|الأبعاد|المقاسات|المواصفات|المميزات|الخامات";
+
+    private const string HeadingFollow = @"(?=\s*:|\s*$|\s+[A-Z\u0600-\u06FF])";
+
+    private static string NormalizeDescription(string text)
+    {
+        text = text.Replace("\r\n", "\n").Replace("\r", "\n");
+        text = Regex.Replace(text, @"[ \t]+", " ");
+        text = Regex.Replace(text, @"\s*[▪•■●◦‣]\s*", "\n• ");
+        text = Regex.Replace(text, @"\s*\b(" + PhraseHeadings + @")", "\n$1");
+        text = Regex.Replace(text,
+            @"(?:(?<=[.!?:]\s)|(?<=\n)|^)(" + WordHeadings + @")" + HeadingFollow,
+            "\n$1", RegexOptions.Multiline);
+        return text;
+    }
+
+    private static bool IsConnector(string token) =>
+        Connectors.Contains(token.ToLowerInvariant());
+
+    // Title-Case run at the start of the text ("Elegant Organization with Less Clutter ..."),
+    // or "" when the text does not start with a heading.
+    private static string LeadingHeading(string text)
+    {
+        var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        for (var i = 0; i < tokens.Length && i < 10; i++)
+        {
+            var t = tokens[i];
+            if (Regex.IsMatch(t, @"[.,;:!?]$")) return "";
+
+            var isUpper = char.IsUpper(t[0]) || char.IsDigit(t[0]);
+            if (!isUpper && !IsConnector(t)) return "";
+
+            if (i > 0 && isUpper && i + 1 < tokens.Length)
+            {
+                var next = tokens[i + 1];
+                if (char.IsLower(next[0]) && !IsConnector(next))
+                {
+                    return i >= 2 && !IsConnector(tokens[i - 1])
+                        ? string.Join(" ", tokens.Take(i))
+                        : "";
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private static bool IsHeadingOnly(string line)
+    {
+        var tokens = line.TrimEnd(':').Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length < 2 || tokens.Length > 8) return false;
+        if (Regex.IsMatch(line.TrimEnd(':'), @"[.,;!?]")) return false;
+        return tokens.All(t => char.IsUpper(t[0]) || IsConnector(t));
+    }
+
+    private static void AddText(DescSection section, string text)
+    {
+        text = text.Trim();
+        if (text.Length == 0) return;
+
+        // "Width: 100 cm Depth: 100 cm Height: 45 cm"  ->  spec tiles
+        var matches = Regex.Matches(text,
+            @"([A-Z\u0600-\u06FF][\w\u0600-\u06FF' ]{0,24}?):\s*(.+?)(?=\s+[A-Z\u0600-\u06FF][\w\u0600-\u06FF' ]{0,24}?:\s|\s*$)");
+
+        if (matches.Count >= 2 && matches[0].Index == 0 && matches.Cast<Match>().All(m => m.Groups[2].Value.Length <= 30))
+        {
+            foreach (Match m in matches)
+            {
+                section.Specs.Add(new KeyValuePair<string, string>(m.Groups[1].Value.Trim(), m.Groups[2].Value.Trim()));
+            }
+        }
+        else
+        {
+            section.Paragraphs.Add(text);
+        }
+    }
+
+    private static List<DescSection> ParseDescription(string description)
+    {
+        var sections = new List<DescSection>();
+        DescSection? current = null;
+        var lines = NormalizeDescription(description).Split('\n').ToList();
+
+        DescSection Start(string title)
+        {
+            var section = new DescSection { Title = title };
+            sections.Add(section);
+            return section;
+        }
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i].Trim();
+            if (line.Length == 0) continue;
+
+            // Bullet
+            if (line.StartsWith("• "))
+            {
+                var bullet = line.Substring(2).Trim();
+
+                // A "Heading + paragraph" glued to the end of the last bullet
+                var m = Regex.Match(bullet, @"^(.+?[.!?])\s+(\S.*)$");
+                if (m.Success && LeadingHeading(m.Groups[2].Value).Length > 0)
+                {
+                    bullet = m.Groups[1].Value;
+                    lines.Insert(i + 1, m.Groups[2].Value);
+                }
+
+                current ??= Start("");
+                current.Bullets.Add(bullet);
+                continue;
+            }
+
+            // Known heading at the start of the line
+            var known = Regex.Match(line,
+                @"^(" + PhraseHeadings + "|" + WordHeadings + @")" + HeadingFollow + @"\s*:?\s*(.*)$");
+            if (known.Success)
+            {
+                current = Start(known.Groups[1].Value);
+                AddText(current, known.Groups[2].Value);
+                continue;
+            }
+
+            // Title-Case heading followed by text
+            var heading = LeadingHeading(line);
+            if (heading.Length > 0)
+            {
+                current = Start(heading);
+                AddText(current, line.Substring(heading.Length));
+                continue;
+            }
+
+            // A line that is only a heading
+            if (IsHeadingOnly(line))
+            {
+                current = Start(line.TrimEnd(':'));
+                continue;
+            }
+
+            // Normal paragraph
+            if (current == null || current.Bullets.Count > 0 || current.Specs.Count > 0)
+            {
+                current = Start("");
+            }
+            AddText(current, line);
+        }
+
+        return sections.Where(x => x.HasContent).ToList();
+    }
+
+    private static string IconFor(string title)
+    {
+        var t = (title ?? "").ToLowerInvariant();
+        if (t.Contains("dimension") || t.Contains("size") || t.Contains("الأبعاد") || t.Contains("المقاسات")) return "bi-rulers";
+        if (t.Contains("love") || t.Contains("feature") || t.Contains("benefit") || t.Contains("المميزات")) return "bi-stars";
+        if (t.Contains("material") || t.Contains("الخامات")) return "bi-layers";
+        if (t.Contains("spec") || t.Contains("المواصفات")) return "bi-list-check";
+        if (t.Contains("organiz") || t.Contains("storage")) return "bi-grid-1x2";
+        if (t.Contains("care")) return "bi-droplet";
+        return "bi-info-circle";
+    }
+}
 @{
     ViewData["Title"] = Model.Name;
 
     // Convert ICollection to List so we can safely use indexes
     var customizationGroups = Model.CustomizationGroups?.ToList()
                               ?? new List<FurniCraft.Models.CustomizationGroup>();
+
+    // View-only helpers
+    var inStock = Model.StockQuantity > 0;
+    var lowStock = inStock && Model.StockQuantity <= 5;
+    var mainImage = string.IsNullOrWhiteSpace(Model.MainImage) ? "/images/products/default.jpg" : Model.MainImage;
+
+    // Split the description into sections (only when it has real structure)
+    DescSection? lead = null;
+    var detailSections = new List<DescSection>();
+
+    if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        var parsed = ParseDescription(Model.Description);
+        var hasStructure = parsed.Any(x => x.Bullets.Count > 0 || x.Specs.Count > 0);
+
+        if (hasStructure)
+        {
+            var first = parsed[0];
+            if (first.Bullets.Count == 0 && first.Specs.Count == 0 && first.Paragraphs.Count > 0)
+            {
+                lead = first;
+                detailSections = parsed.Skip(1).ToList();
+            }
+            else
+            {
+                detailSections = parsed;
+            }
+        }
+    }
+
+    var structuredDescription = detailSections.Any();
 }
 
-<div class="container my-5">
-    <div class="row g-5">
+<div class="container fc-details">
 
-        <!-- صورة المنتج -->
-        <div class="col-md-6">
-            <div class="fc-card p-2 sticky-top" style="top: 100px;">
-                <img src="@Model.MainImage"
-                     class="img-fluid rounded w-100"
-                     style="max-height: 480px; object-fit: cover;"
-                     alt="@Model.Name"
-                     onerror="this.src='/images/products/default.jpg'" />
+    <!-- =========================
+         BREADCRUMB
+    ========================= -->
+    <nav aria-label="مسار التنقل">
+        <ol class="breadcrumb fc-breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-controller="Home" asp-action="Index">الرئيسية</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-controller="Products" asp-action="Index">المتجر</a>
+            </li>
+            @if (Model.Category != null)
+            {
+            <li class="breadcrumb-item">
+                <a asp-controller="Products" asp-action="Index" asp-route-categoryId="@Model.Category.Id">@Model.Category.Name</a>
+            </li>
+            }
+            <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4 g-lg-5">
+
+        <!-- =========================
+             PRODUCT IMAGE
+        ========================= -->
+        <div class="col-lg-6">
+            <div class="fc-gallery">
+
+                <div class="fc-gallery-frame">
+                    <img src="@mainImage"
+                         class="fc-gallery-image"
+                         alt="@Model.Name"
+                         decoding="async"
+                         fetchpriority="high"
+                         onerror="this.onerror=null;this.src='/images/products/default.jpg';" />
+                </div>
+
+                <ul class="fc-trust">
+                    <li class="fc-trust-item">
+                        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+                        <span>دفع عند الاستلام</span>
+                    </li>
+                    <li class="fc-trust-item">
+                        <i class="bi bi-gem" aria-hidden="true"></i>
+                        <span>جودة مضمونة</span>
+                    </li>
+                    <li class="fc-trust-item">
+                        <i class="bi bi-bag-check" aria-hidden="true"></i>
+                        <span>طلب سهل وسريع</span>
+                    </li>
+                </ul>
+
             </div>
         </div>
 
-        <!-- تفاصيل وخيارات التخصيص -->
-        <div class="col-md-6">
+        <!-- =========================
+             DETAILS + OPTIONS
+        ========================= -->
+        <div class="col-lg-6">
             <form asp-controller="Cart" asp-action="AddToCart" method="post">
 
                 <input type="hidden" name="productId" value="@Model.Id" />
 
-                <span class="badge bg-light text-dark mb-2">
-                    @Model.Category?.Name
-                </span>
+                <!-- Header -->
+                <div class="fc-details-meta">
 
-                <h2 class="fw-bold mb-2">@Model.Name</h2>
+                    @if (Model.Category != null)
+                    {
+                    <span class="fc-badge">@Model.Category.Name</span>
+                    }
 
-                <p class="text-muted mb-3">
-                    @Model.Description
-                </p>
-
-                <!-- السعر -->
-                <div class="p-3 rounded mb-4"
-                     style="background-color: var(--fc-sand); border-right: 4px solid var(--fc-primary);">
-
-                    <span class="text-muted small d-block">
-                        سعر القطعة:
+                    @if (!inStock)
+                    {
+                    <span class="fc-stock fc-stock--out">
+                        <i class="bi bi-x-circle" aria-hidden="true"></i>
+                        غير متوفر حالياً
                     </span>
+                    }
+                    else if (lowStock)
+                    {
+                    <span class="fc-stock fc-stock--low">
+                        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+                        الكمية محدودة، المتاح @Model.StockQuantity قطع
+                    </span>
+                    }
+                    else
+                    {
+                    <span class="fc-stock fc-stock--in">
+                        <i class="bi bi-check-circle" aria-hidden="true"></i>
+                        متوفر، المتاح @Model.StockQuantity قطعة
+                    </span>
+                    }
 
-                    <div class="d-flex align-items-baseline gap-2">
-                        <span class="fs-2 fw-bold text-primary" id="unitPriceDisplay">
-                            @Model.BasePrice.ToString("N0")
-                        </span>
+                </div>
 
-                        <span class="fw-bold text-primary">
-                            ج.م
-                        </span>
-                    </div>
+                <h1 class="fc-details-title">@Model.Name</h1>
 
-                    <div class="mt-2">
-                        <span class="text-muted small">
-                            الإجمالي:
-                        </span>
+                @if (structuredDescription)
+                {
+                <div class="fc-lead">
+                    @if (lead != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(lead.Title))
+                            {
+                    <p class="fc-lead-title" dir="auto">@lead.Title</p>
+                            }
 
-                        <span class="fs-4 fw-bold text-dark" id="totalPriceDisplay">
-                            @Model.BasePrice.ToString("N0")
-                        </span>
+                            foreach (var paragraph in lead.Paragraphs)
+                            {
+                    <p class="fc-lead-text" dir="auto">@paragraph</p>
+                            }
+                        }
 
-                        <span class="fw-bold text-dark">
-                            ج.م
-                        </span>
+                    <a href="#product-details" class="fc-link-btn">
+                        عرض كل تفاصيل المنتج
+                        <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                    </a>
+                </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                <div class="fc-description">
+                    <p class="fc-description-text" id="descriptionText" dir="auto">@Model.Description</p>
+                    <button type="button" class="fc-link-btn" id="descriptionToggle" hidden aria-expanded="false">
+                        عرض المزيد
+                    </button>
+                </div>
+                }
+
+                <!-- Price -->
+                <div class="fc-price-box">
+                    <span class="fc-price-label">سعر القطعة</span>
+
+                    <div class="fc-price-value">
+                        <span id="unitPriceDisplay">@Model.BasePrice.ToString("N0")</span>
+                        <small>ج.م</small>
                     </div>
                 </div>
 
-                <!-- خيارات التخصيص -->
+                <!-- Customization -->
                 @if (customizationGroups.Any())
                 {
-                <div class="fc-card p-4 mb-4">
+                <section class="fc-panel" aria-labelledby="custom-title">
 
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">
-                        <i class="bi bi-sliders me-2 text-primary"></i>
+                    <h2 class="fc-panel-title" id="custom-title">
+                        <span class="fc-panel-icon"><i class="bi bi-sliders" aria-hidden="true"></i></span>
                         تخصيصات واستبدالات القطعة
-                    </h5>
+                    </h2>
 
                     @for (var groupIndex = 0; groupIndex < customizationGroups.Count; groupIndex++)
                         {
                             var group = customizationGroups[groupIndex];
+                            var isFirst = true;
 
-                    <div class="mb-4">
+                    <fieldset class="fc-option-group">
 
-                        <label class="form-label fw-bold small text-dark mb-2">
-                            @group.Name
-                        </label>
+                        <legend class="fc-option-legend">@group.Name</legend>
 
-                        <div class="d-flex flex-column gap-2">
-
-                            @{
-                                        var isFirst = true;
-                            }
+                        <div class="fc-option-list">
 
                             @foreach (var opt in group.Options)
                                     {
-                            <label class="border rounded p-2 px-3 d-flex justify-content-between align-items-center customization-option-label"
-                                   style="cursor: pointer;">
+                            <label class="fc-option">
 
-                                <div>
+                                <span class="fc-option-main">
                                     <input type="radio"
                                            name="selectedOptionIds[@groupIndex]"
                                            value="@opt.Id"
                                            data-price="@opt.AdditionalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                           class="form-check-input me-2 option-radio"
+                                           class="form-check-input option-radio"
                                            @(isFirst ? "checked" : "") />
 
-                                    <span>@opt.Name</span>
-                                </div>
+                                    <span class="fc-option-name">@opt.Name</span>
+                                </span>
 
-                                <span class="badge bg-light text-success fw-bold">
+                                @if (opt.AdditionalPrice > 0)
+                                            {
+                                <span class="fc-option-price">
                                     +@opt.AdditionalPrice.ToString("N0") ج.م
                                 </span>
+                                            }
+                                            else
+                                            {
+                                <span class="fc-option-price fc-option-price--free">
+                                    مشمول
+                                </span>
+                                            }
 
                             </label>
 
@@ -123,96 +426,164 @@
                                     }
 
                         </div>
-                    </div>
+                    </fieldset>
                         }
 
-                </div>
+                </section>
                 }
 
-                <!-- اختيار الكمية -->
-                <div class="fc-card p-4 mb-4">
+                <!-- Quantity -->
+                <section class="fc-panel" aria-labelledby="qty-title">
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="fc-qty-row">
 
-                        <label class="fw-bold mb-0">
-                            <i class="bi bi-box-seam me-2 text-primary"></i>
+                        <h2 class="fc-panel-title mb-0" id="qty-title">
+                            <span class="fc-panel-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
                             الكمية
-                        </label>
+                        </h2>
 
-                        <span class="text-muted small">
-                            المتاح: @Model.StockQuantity قطعة
-                        </span>
+                        @if (inStock)
+                        {
+                        <div class="fc-stepper" dir="ltr">
+
+                            <button type="button"
+                                    class="quantity-btn"
+                                    id="decreaseQuantity"
+                                    aria-label="تقليل الكمية">
+                                <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                            </button>
+
+                            <input type="number"
+                                   id="quantityInput"
+                                   name="quantity"
+                                   value="1"
+                                   min="1"
+                                   max="@Model.StockQuantity"
+                                   inputmode="numeric"
+                                   aria-label="الكمية" />
+
+                            <button type="button"
+                                    class="quantity-btn"
+                                    id="increaseQuantity"
+                                    aria-label="زيادة الكمية">
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                            </button>
+
+                        </div>
+                        }
 
                     </div>
 
-                    @if (Model.StockQuantity > 0)
+                    @if (inStock)
                     {
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-
-                        <button type="button"
-                                class="btn btn-fc-outline quantity-btn"
-                                id="decreaseQuantity">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-
-                        <input type="number"
-                               id="quantityInput"
-                               name="quantity"
-                               value="1"
-                               min="1"
-                               max="@Model.StockQuantity"
-                               class="form-control text-center fw-bold"
-                               style="width: 90px; font-size: 1.1rem;" />
-
-                        <button type="button"
-                                class="btn btn-fc-outline quantity-btn"
-                                id="increaseQuantity">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
-
-                    </div>
-
-                    <div class="text-center mt-2">
-                        <small class="text-muted">
-                            يمكنك طلب حتى @Model.StockQuantity قطعة
-                        </small>
-                    </div>
+                    <p class="fc-hint">يمكنك طلب حتى @Model.StockQuantity قطعة</p>
                     }
                     else
                     {
-                    <div class="alert alert-warning mb-0 text-center">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+                    <div class="alert alert-warning mb-0 mt-3 text-center">
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                         هذا المنتج غير متوفر حالياً.
                     </div>
                     }
 
-                </div>
+                </section>
 
-                <!-- الأزرار -->
-                <div class="d-grid gap-2">
+                <!-- Total + Actions -->
+                <div class="fc-buy">
 
-                    <button type="submit"
-                            class="btn btn-fc-primary btn-lg"
-                            @(Model.StockQuantity <= 0 ? "disabled" : "")>
+                    <div class="fc-total-row">
+                        <span class="fc-total-label">الإجمالي</span>
 
-                        <i class="bi bi-bag-plus me-2"></i>
-                        إضافة للسلة
+                        <div class="fc-total-value">
+                            <span id="totalPriceDisplay">@Model.BasePrice.ToString("N0")</span>
+                            <small>ج.م</small>
+                        </div>
+                    </div>
 
-                    </button>
+                    <div class="d-grid gap-2">
 
-                    <a asp-action="Index"
-                       class="btn btn-fc-outline">
+                        <button type="submit"
+                                class="btn btn-fc-primary btn-lg"
+                                @(Model.StockQuantity <= 0 ? "disabled" : "")>
 
-                        <i class="bi bi-arrow-right me-1"></i>
-                        العودة للمتجر
+                            <i class="bi bi-bag-plus me-2" aria-hidden="true"></i>
+                            إضافة للسلة
 
-                    </a>
+                        </button>
+
+                        <a asp-action="Index" class="fc-back-link">
+                            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                            العودة للمتجر
+                        </a>
+
+                    </div>
 
                 </div>
 
             </form>
         </div>
     </div>
+
+    <!-- =========================
+         PRODUCT DETAILS (sections)
+    ========================= -->
+    @if (structuredDescription)
+    {
+    <section id="product-details" class="fc-detail-section" aria-labelledby="details-title">
+
+        <h2 id="details-title" class="fc-detail-heading">تفاصيل المنتج</h2>
+
+        <div class="fc-detail-grid">
+
+            @foreach (var section in detailSections)
+                {
+                    var sectionTitle = string.IsNullOrWhiteSpace(section.Title) ? "معلومات إضافية" : section.Title;
+                    var isWide = section.Bullets.Count > 3;
+
+            <article class="fc-detail-card @(isWide ? "fc-detail-card--wide" : "")">
+
+                <h3 class="fc-detail-card-title">
+                    <span class="fc-panel-icon"><i class="bi @IconFor(sectionTitle)" aria-hidden="true"></i></span>
+                    <span dir="auto">@sectionTitle</span>
+                </h3>
+
+                @if (section.Specs.Any())
+                        {
+                <dl class="fc-spec-grid">
+                    @foreach (var spec in section.Specs)
+                                {
+                    <div class="fc-spec">
+                        <dt dir="auto">@spec.Key</dt>
+                        <dd dir="auto">@spec.Value</dd>
+                    </div>
+                                }
+                </dl>
+                        }
+
+                @foreach (var paragraph in section.Paragraphs)
+                        {
+                <p class="fc-detail-text" dir="auto">@paragraph</p>
+                        }
+
+                @if (section.Bullets.Any())
+                        {
+                <ul class="fc-checklist">
+                    @foreach (var bullet in section.Bullets)
+                                {
+                    <li dir="auto">
+                        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        <span>@bullet</span>
+                    </li>
+                                }
+                </ul>
+                        }
+
+            </article>
+                }
+
+        </div>
+    </section>
+    }
 </div>
 
 @section Scripts {
@@ -226,68 +597,75 @@
         const quantityInput = document.getElementById("quantityInput");
         const totalPriceDisplay = document.getElementById("totalPriceDisplay");
         const unitPriceDisplay = document.getElementById("unitPriceDisplay");
+        const increaseButton = document.getElementById("increaseQuantity");
+        const decreaseButton = document.getElementById("decreaseQuantity");
 
         function getUnitPrice() {
 
             let unitPrice = basePrice;
 
-            const selectedRadios =
-                document.querySelectorAll(".option-radio:checked");
-
-            selectedRadios.forEach(radio => {
-
-                unitPrice += parseFloat(
-                    radio.getAttribute("data-price") || "0"
-                );
-
+            document.querySelectorAll(".option-radio:checked").forEach(radio => {
+                unitPrice += parseFloat(radio.getAttribute("data-price") || "0");
             });
 
             return unitPrice;
         }
 
+        function getQuantity() {
+            if (!quantityInput) return 1;
+            return parseInt(quantityInput.value) || 1;
+        }
+
+        // تفعيل / تعطيل أزرار الكمية عند الحد الأدنى والأقصى
+        function updateQuantityButtons() {
+            if (!quantityInput) return;
+
+            const quantity = getQuantity();
+            const min = parseInt(quantityInput.min) || 1;
+            const max = parseInt(quantityInput.max) || quantity;
+
+            if (decreaseButton) decreaseButton.disabled = quantity <= min;
+            if (increaseButton) increaseButton.disabled = quantity >= max;
+        }
+
         function calculateTotalPrice() {
 
             const unitPrice = getUnitPrice();
-
-            let quantity = 1;
-
-            if (quantityInput) {
-                quantity = parseInt(quantityInput.value) || 1;
-            }
-
-            const totalPrice = unitPrice * quantity;
+            const totalPrice = unitPrice * getQuantity();
 
             if (unitPriceDisplay) {
-                unitPriceDisplay.innerText =
-                    unitPrice.toLocaleString("en-US");
+                unitPriceDisplay.innerText = unitPrice.toLocaleString("en-US");
             }
 
             if (totalPriceDisplay) {
-                totalPriceDisplay.innerText =
-                    totalPrice.toLocaleString("en-US");
+                totalPriceDisplay.innerText = totalPrice.toLocaleString("en-US");
             }
+
+            updateQuantityButtons();
+        }
+
+        // تمييز الخيار المحدد (احتياطي للمتصفحات القديمة)
+        function markSelectedOptions() {
+            document.querySelectorAll(".fc-option").forEach(label => {
+                const radio = label.querySelector(".option-radio");
+                label.classList.toggle("is-selected", !!(radio && radio.checked));
+            });
         }
 
         // تغيير التخصيص
         document.querySelectorAll(".option-radio").forEach(radio => {
-
-            radio.addEventListener("change", calculateTotalPrice);
-
+            radio.addEventListener("change", function () {
+                markSelectedOptions();
+                calculateTotalPrice();
+            });
         });
 
         // زيادة الكمية
-        const increaseButton =
-            document.getElementById("increaseQuantity");
-
         if (increaseButton) {
-
             increaseButton.addEventListener("click", function () {
 
-                const max =
-                    parseInt(quantityInput.max);
-
-                let quantity =
-                    parseInt(quantityInput.value) || 1;
+                const max = parseInt(quantityInput.max);
+                let quantity = getQuantity();
 
                 if (quantity < max) {
                     quantity++;
@@ -296,19 +674,13 @@
                 }
 
             });
-
         }
 
         // تقليل الكمية
-        const decreaseButton =
-            document.getElementById("decreaseQuantity");
-
         if (decreaseButton) {
-
             decreaseButton.addEventListener("click", function () {
 
-                let quantity =
-                    parseInt(quantityInput.value) || 1;
+                let quantity = getQuantity();
 
                 if (quantity > 1) {
                     quantity--;
@@ -317,7 +689,6 @@
                 }
 
             });
-
         }
 
         // لو المستخدم كتب الكمية بإيده
@@ -325,22 +696,13 @@
 
             quantityInput.addEventListener("input", function () {
 
-                let quantity =
-                    parseInt(this.value) || 1;
+                let quantity = parseInt(this.value) || 1;
 
-                const min =
-                    parseInt(this.min);
+                const min = parseInt(this.min);
+                const max = parseInt(this.max);
 
-                const max =
-                    parseInt(this.max);
-
-                if (quantity < min) {
-                    quantity = min;
-                }
-
-                if (quantity > max) {
-                    quantity = max;
-                }
+                if (quantity < min) quantity = min;
+                if (quantity > max) quantity = max;
 
                 this.value = quantity;
 
@@ -350,8 +712,30 @@
 
         }
 
+        // وصف المنتج: عرض المزيد / أقل
+        (function () {
+            const text = document.getElementById("descriptionText");
+            const toggle = document.getElementById("descriptionToggle");
+            if (!text || !toggle) return;
+
+            function checkOverflow() {
+                if (text.classList.contains("is-expanded")) return;
+                toggle.hidden = !(text.scrollHeight > text.clientHeight + 1);
+            }
+
+            toggle.addEventListener("click", function () {
+                const expanded = text.classList.toggle("is-expanded");
+                toggle.textContent = expanded ? "عرض أقل" : "عرض المزيد";
+                toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+            });
+
+            checkOverflow();
+            window.addEventListener("load", checkOverflow);
+            window.addEventListener("resize", checkOverflow);
+        })();
+
+        markSelectedOptions();
         calculateTotalPrice();
 
     </script>
 }
-```

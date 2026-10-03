@@ -1,120 +1,608 @@
-﻿/* FurniCraft Premium Furniture Theme */
+﻿/* =========================================================
+   FurniCraft - Professional Furniture Theme
+   Visual styling only: colors, backgrounds, borders, shadows,
+   typography and states.
+   - No layout, width, height or image-size rules are changed.
+   - All existing class names are kept, so markup and back end
+     code work exactly as before.
+   ========================================================= */
+
 :root {
-    --fc-primary: #8C6D53;        /* Warm Wood/Beige */
-    --fc-primary-hover: #735741;
-    --fc-dark: #2B2B2B;           /* Charcoal Dark Gray */
-    --fc-light-bg: #FAF8F5;       /* Cream / Off-white */
+    /* Brand */
+    --fc-primary: #8C6D53;
+    --fc-primary-hover: #6F5440;
+    --fc-primary-active: #5E4636;
+    --fc-primary-soft: rgba(140, 109, 83, 0.12);
+    --fc-accent: #B98655;
+    /* Text */
+    --fc-dark: #2B2621;
+    --fc-text: #3A332D;
+    --fc-text-muted: #6B625A;
+    /* Backgrounds */
+    --fc-light-bg: #F8F5F0;
+    --fc-section-bg: #F0E9DF;
+    --fc-sand: #E8DAC8;
     --fc-card-bg: #FFFFFF;
-    --fc-accent: #D4A373;         /* Muted Gold/Wood */
-    --fc-border: #E8E2D9;
-    --fc-text-muted: #6C757D;
-    --fc-radius: 12px;
-    --fc-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    --fc-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.1);
+    --fc-input-bg: #FFFFFF;
+    /* Lines */
+    --fc-border: #E0D7CB;
+    --fc-border-strong: #CDBFAF;
+    /* Feedback */
+    --fc-focus: rgba(140, 109, 83, 0.35);
+    --fc-disabled-bg: #E4DCD1;
+    --fc-disabled-text: #8A8178;
+    /* Shape & depth */
+    --fc-radius: 10px;
+    --fc-radius-lg: 16px;
+    --fc-shadow-sm: 0 1px 2px rgba(43, 38, 33, 0.06);
+    --fc-shadow: 0 6px 20px rgba(43, 38, 33, 0.06);
+    --fc-shadow-hover: 0 14px 32px rgba(43, 38, 33, 0.12);
+    /* Motion */
+    --fc-ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+html {
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
     background-color: var(--fc-light-bg);
-    color: var(--fc-dark);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--fc-text);
+    font-family: 'Cairo', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
-/* Navbar Style */
-.fc-navbar {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--fc-border);
-    padding: 0.8rem 0;
-    transition: all 0.3s ease;
+main {
+    flex: 1;
 }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--fc-dark);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+p {
+    color: var(--fc-text);
+}
+
+a {
+    color: var(--fc-primary);
+    text-decoration-color: rgba(140, 109, 83, 0.4);
+    text-underline-offset: 3px;
+    transition: color 0.2s var(--fc-ease);
+}
+
+    a:hover {
+        color: var(--fc-primary-hover);
+    }
+
+hr {
+    border-color: var(--fc-border);
+    opacity: 1;
+}
+
+.text-muted {
+    color: var(--fc-text-muted) !important;
+}
+
+::selection {
+    background-color: var(--fc-primary);
+    color: #FFFFFF;
+}
+
+
+/* =========================================================
+   KEYBOARD FOCUS (accessibility)
+   Clear ring on every interactive element.
+   ========================================================= */
+
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.nav-link:focus-visible,
+.form-check-input:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--fc-focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
+.fc-navbar {
+    background-color: rgba(255, 253, 250, 0.96);
+    -webkit-backdrop-filter: saturate(160%) blur(8px);
+    backdrop-filter: saturate(160%) blur(8px);
+    border-bottom: 1px solid var(--fc-border);
+    box-shadow: var(--fc-shadow-sm);
+    padding: 0.8rem 0;
+    transition: box-shadow 0.3s var(--fc-ease);
+}
+
+    .fc-navbar:hover {
+        box-shadow: 0 6px 22px rgba(43, 38, 33, 0.07);
+    }
+
+/* Brand */
 
 .fc-brand {
     font-weight: 700;
     font-size: 1.5rem;
     color: var(--fc-dark) !important;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.02em;
 }
 
-.fc-brand span {
-    color: var(--fc-primary);
-}
+    .fc-brand span span,
+    h5.fc-brand > span {
+        color: var(--fc-primary);
+    }
+
+/* Navigation links */
 
 .nav-link {
+    position: relative;
     color: var(--fc-dark) !important;
     font-weight: 500;
     padding: 0.5rem 1rem !important;
-    transition: color 0.2s ease;
+    transition: color 0.2s var(--fc-ease);
 }
 
-.nav-link:hover, .nav-link.active {
-    color: var(--fc-primary) !important;
+    .nav-link:hover,
+    .nav-link.active {
+        color: var(--fc-primary) !important;
+    }
+
+    /* Underline indicator drawn with a background, so no layout shift */
+    .nav-link::after {
+        content: "";
+        position: absolute;
+        left: 1rem;
+        right: 1rem;
+        bottom: 0.2rem;
+        height: 2px;
+        background-color: var(--fc-primary);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.25s var(--fc-ease);
+        pointer-events: none;
+    }
+
+    .nav-link:hover::after,
+    .nav-link.active::after {
+        transform: scaleX(1);
+    }
+
+/* Mobile menu button */
+
+.navbar-toggler {
+    border: 1px solid var(--fc-border-strong);
+    border-radius: var(--fc-radius);
 }
 
-/* Custom Buttons */
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.2rem var(--fc-focus);
+    }
+
+/* Dropdowns */
+
+.dropdown-menu {
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+    box-shadow: var(--fc-shadow-hover);
+}
+
+.dropdown-item {
+    color: var(--fc-text);
+    transition: background-color 0.2s var(--fc-ease), color 0.2s var(--fc-ease);
+}
+
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+        background-color: var(--fc-section-bg);
+        color: var(--fc-primary-hover);
+    }
+
+    .dropdown-item.active,
+    .dropdown-item:active {
+        background-color: var(--fc-primary);
+        color: #FFFFFF;
+    }
+
+
+/* =========================================================
+   BUTTONS
+   Always readable, always show a pointer, clear
+   hover / pressed / focus / disabled states.
+   ========================================================= */
+
+.btn-fc-primary,
+.btn-fc-outline {
+    cursor: pointer;
+    font-weight: 600;
+    border-radius: var(--fc-radius);
+    transition: background-color 0.25s var(--fc-ease), color 0.25s var(--fc-ease), border-color 0.25s var(--fc-ease), box-shadow 0.25s var(--fc-ease), transform 0.25s var(--fc-ease);
+}
+
+/* Primary */
+
 .btn-fc-primary {
     background-color: var(--fc-primary);
     color: #FFFFFF !important;
-    border: none;
-    border-radius: var(--fc-radius);
+    border: 1.5px solid var(--fc-primary);
     padding: 0.6rem 1.4rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(111, 84, 64, 0.22);
 }
 
-.btn-fc-primary:hover {
-    background-color: var(--fc-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(140, 109, 83, 0.3);
-}
+    .btn-fc-primary:hover {
+        background-color: var(--fc-primary-hover);
+        border-color: var(--fc-primary-hover);
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(111, 84, 64, 0.28);
+    }
+
+    .btn-fc-primary:active {
+        background-color: var(--fc-primary-active);
+        border-color: var(--fc-primary-active);
+        color: #FFFFFF !important;
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(111, 84, 64, 0.22);
+    }
+
+    .btn-fc-primary:focus-visible {
+        box-shadow: 0 0 0 0.25rem var(--fc-focus);
+    }
+
+/* Outline */
 
 .btn-fc-outline {
     background-color: transparent;
     color: var(--fc-primary) !important;
     border: 1.5px solid var(--fc-primary);
-    border-radius: var(--fc-radius);
-    padding: 0.55rem 1.3rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    padding: 0.6rem 1.4rem;
 }
 
-.btn-fc-outline:hover {
-    background-color: var(--fc-primary);
-    color: #FFFFFF !important;
+    .btn-fc-outline:hover {
+        background-color: var(--fc-primary);
+        border-color: var(--fc-primary);
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(111, 84, 64, 0.2);
+    }
+
+    .btn-fc-outline:active {
+        background-color: var(--fc-primary-active);
+        border-color: var(--fc-primary-active);
+        color: #FFFFFF !important;
+        transform: translateY(0);
+    }
+
+    .btn-fc-outline:focus-visible {
+        box-shadow: 0 0 0 0.25rem var(--fc-focus);
+    }
+
+    /* Disabled: still readable, clearly not clickable */
+
+    .btn-fc-primary:disabled,
+    .btn-fc-primary.disabled,
+    .btn-fc-outline:disabled,
+    .btn-fc-outline.disabled {
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 1;
+    }
+
+.btn-fc-primary:disabled,
+.btn-fc-primary.disabled {
+    background-color: var(--fc-disabled-bg);
+    border-color: var(--fc-disabled-bg);
+    color: var(--fc-disabled-text) !important;
 }
 
-/* Cards & UI Container */
+.btn-fc-outline:disabled,
+.btn-fc-outline.disabled {
+    background-color: transparent;
+    border-color: var(--fc-border-strong);
+    color: var(--fc-disabled-text) !important;
+}
+
+
+/* =========================================================
+   CARDS
+   IMPORTANT: width / height / image dimensions untouched.
+   ========================================================= */
+
 .fc-card {
-    background: var(--fc-card-bg);
+    background-color: var(--fc-card-bg);
     border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow-sm);
+    overflow: hidden;
+    transition: box-shadow 0.3s var(--fc-ease), border-color 0.3s var(--fc-ease), transform 0.3s var(--fc-ease);
+}
+
+    .fc-card:hover {
+        box-shadow: var(--fc-shadow-hover);
+        border-color: var(--fc-border-strong);
+        transform: translateY(-3px);
+    }
+
+.card-title {
+    color: var(--fc-dark);
+}
+
+
+/* =========================================================
+   SECTION BACKGROUNDS
+   ========================================================= */
+
+.fc-section-soft {
+    background-color: var(--fc-section-bg);
+}
+
+.fc-section-sand {
+    background-color: var(--fc-sand);
+}
+
+.fc-section-cream {
+    background-color: #FCFAF6;
+}
+
+
+/* =========================================================
+   HERO
+   Only affects elements that explicitly use .fc-hero
+   ========================================================= */
+
+.fc-hero {
+    background: radial-gradient(circle at 85% 15%, rgba(185, 134, 85, 0.16) 0%, rgba(185, 134, 85, 0) 45%), linear-gradient(135deg, #F4EADD 0%, #F9F5EF 55%, #EBDFCF 100%);
+    border: 1px solid var(--fc-border);
+    border-radius: 24px;
+}
+
+
+/* =========================================================
+   PRODUCT IMAGE
+   Does NOT force width/height.
+   ========================================================= */
+
+.fc-product-image {
+    object-fit: cover;
+    display: block;
+    background-color: var(--fc-section-bg);
+}
+
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+.fc-badge {
+    display: inline-block;
+    background-color: var(--fc-sand);
+    color: var(--fc-primary-active);
+    border: 1px solid rgba(140, 109, 83, 0.18);
+    border-radius: 50px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+
+/* =========================================================
+   FORMS
+   ========================================================= */
+
+.form-label {
+    color: var(--fc-dark);
+    font-weight: 500;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--fc-input-bg);
+    color: var(--fc-text);
+    border: 1px solid var(--fc-border-strong);
     border-radius: var(--fc-radius);
-    box-shadow: var(--fc-shadow);
-    transition: all 0.3s ease;
+    transition: border-color 0.2s var(--fc-ease), box-shadow 0.2s var(--fc-ease);
 }
 
-.fc-card:hover {
-    box-shadow: var(--fc-shadow-hover);
+    .form-control::placeholder {
+        color: #9A9086;
+    }
+
+    .form-control:hover,
+    .form-select:hover {
+        border-color: var(--fc-primary);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: var(--fc-input-bg);
+        color: var(--fc-text);
+        border-color: var(--fc-primary);
+        box-shadow: 0 0 0 0.22rem var(--fc-focus);
+    }
+
+    .form-control:disabled,
+    .form-select:disabled {
+        background-color: var(--fc-section-bg);
+        color: var(--fc-disabled-text);
+        cursor: not-allowed;
+    }
+
+.form-check-input:checked {
+    background-color: var(--fc-primary);
+    border-color: var(--fc-primary);
 }
 
-/* Footer Style */
+.form-check-input:focus {
+    border-color: var(--fc-primary);
+    box-shadow: 0 0 0 0.22rem var(--fc-focus);
+}
+
+/* Validation (works with Bootstrap / ASP.NET validation classes) */
+
+.is-invalid,
+.input-validation-error {
+    border-color: #B3402F !important;
+}
+
+.invalid-feedback,
+.text-danger,
+.field-validation-error {
+    color: #B3402F !important;
+}
+
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--fc-text);
+    --bs-table-border-color: var(--fc-border);
+    --bs-table-hover-bg: rgba(140, 109, 83, 0.06);
+}
+
+    .table thead {
+        background-color: var(--fc-sand);
+    }
+
+        .table thead th {
+            color: var(--fc-dark);
+            font-weight: 600;
+            border-bottom: 2px solid var(--fc-border-strong);
+        }
+
+    .table > :not(caption) > * > * {
+        background-color: transparent;
+    }
+
+.table-hover > tbody > tr {
+    transition: background-color 0.2s var(--fc-ease);
+}
+
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+.page-link {
+    color: var(--fc-primary);
+    background-color: var(--fc-card-bg);
+    border-color: var(--fc-border);
+}
+
+    .page-link:hover {
+        color: var(--fc-primary-hover);
+        background-color: var(--fc-section-bg);
+        border-color: var(--fc-border-strong);
+    }
+
+    .page-link:focus {
+        box-shadow: 0 0 0 0.2rem var(--fc-focus);
+    }
+
+.page-item.active .page-link {
+    background-color: var(--fc-primary);
+    border-color: var(--fc-primary);
+    color: #FFFFFF;
+}
+
+.page-item.disabled .page-link {
+    background-color: var(--fc-section-bg);
+    color: var(--fc-disabled-text);
+}
+
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.alert {
+    border-radius: var(--fc-radius);
+}
+
+.alert-success {
+    background-color: #EEF4EA;
+    border-color: #CFE0C5;
+    color: #2F4A25;
+}
+
+.alert-danger {
+    background-color: #F9ECE9;
+    border-color: #EBC6BE;
+    color: #7A2B1F;
+}
+
+.alert-warning {
+    background-color: #FBF3E3;
+    border-color: #EBD9AE;
+    color: #6B4E12;
+}
+
+.alert-info {
+    background-color: #EDF2F5;
+    border-color: #C9D8E0;
+    color: #2D4A59;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
 .fc-footer {
-    background-color: #23211E;
-    color: #D1CDC7;
+    background-color: #27221D;
+    color: #D8D0C7;
     margin-top: auto;
-    border-top: 1px solid #3A3632;
+    border-top: 3px solid var(--fc-primary);
 }
 
-.fc-footer a {
-    color: #D1CDC7;
-    text-decoration: none;
-    transition: color 0.2s;
-}
+    .fc-footer a {
+        color: #D8D0C7;
+        text-decoration: none;
+        transition: color 0.2s var(--fc-ease);
+    }
 
-.fc-footer a:hover {
-    color: var(--fc-accent);
-}
+        .fc-footer a:hover {
+            color: #E2B987;
+        }
+
+        .fc-footer a:focus-visible {
+            outline-color: rgba(226, 185, 135, 0.6);
+        }
+
+    .fc-footer p,
+    .fc-footer li,
+    .fc-footer .text-muted {
+        color: #BDB3A8 !important;
+    }
+
+    .fc-footer hr {
+        border-color: #40382F;
+    }
 
 .fc-footer-heading {
     color: #FFFFFF;
@@ -122,3 +610,1723 @@ body {
     font-weight: 600;
     margin-bottom: 1rem;
 }
+
+
+/* =========================================================
+   SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .fc-brand {
+        font-size: 1.3rem;
+    }
+
+    .fc-navbar {
+        padding: 0.6rem 0;
+    }
+
+    .fc-hero {
+        border-radius: 18px;
+    }
+
+    /* Hover lift is not useful on touch screens */
+    .fc-card:hover,
+    .btn-fc-primary:hover,
+    .btn-fc-outline:hover {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   Respect users who turn animations off.
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .fc-card:hover,
+    .btn-fc-primary:hover,
+    .btn-fc-outline:hover {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   =========================================================
+   PAGE LAYOUT (added)
+   Sizes, spacing and structure for the home page and layout.
+   Images use fixed aspect ratios so every photo is the same
+   shape and never stretches.
+   =========================================================
+   ========================================================= */
+
+/* ---------- Layout shell ---------- */
+
+.fc-main {
+    margin-top: 80px;
+    padding-bottom: 60px;
+}
+
+.fc-brand-icon {
+    color: var(--fc-primary);
+}
+
+.fc-footer .fc-brand {
+    color: #FFFFFF !important;
+}
+
+.fc-navbar .dropdown-menu {
+    min-width: 13rem;
+}
+
+.fc-navbar .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+}
+
+    .fc-navbar .dropdown-item.text-danger:hover {
+        background-color: #F9ECE9;
+        color: #7A2B1F !important;
+    }
+
+/* Tighter vertical rhythm for footer lists */
+.fc-footer ul li a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+
+/* ---------- Hero ---------- */
+
+.fc-hero {
+    padding: clamp(2.5rem, 6vw, 5rem) 0;
+    border: 0;
+    border-bottom: 1px solid var(--fc-border);
+    border-radius: 0 0 32px 32px;
+    overflow: hidden;
+}
+
+.fc-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background-color: #FFFFFF;
+    color: var(--fc-primary-active);
+    border: 1px solid var(--fc-border);
+    border-radius: 50px;
+    padding: 0.35rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-hero-title {
+    font-size: clamp(2rem, 4.6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 1.1rem 0 1rem;
+}
+
+    .fc-hero-title span {
+        display: block;
+        color: var(--fc-primary);
+    }
+
+.fc-hero-description {
+    font-size: 1.1rem;
+    line-height: 1.9;
+    color: var(--fc-text-muted);
+    max-width: 34rem;
+    margin-bottom: 0;
+}
+
+.fc-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+.fc-hero-stats {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 2.25rem;
+}
+
+    .fc-hero-stats strong {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--fc-dark);
+        line-height: 1.2;
+    }
+
+    .fc-hero-stats span {
+        font-size: 0.9rem;
+        color: var(--fc-text-muted);
+    }
+
+.fc-stat-divider {
+    width: 1px;
+    height: 36px;
+    background-color: var(--fc-border-strong);
+}
+
+/* Hero image */
+
+.fc-hero-image-wrapper {
+    position: relative;
+    padding: 1rem;
+}
+
+.fc-hero-decoration {
+    position: absolute;
+    z-index: 0;
+}
+
+.fc-decoration-one {
+    top: 0;
+    inset-inline-end: 0;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: var(--fc-sand);
+}
+
+.fc-decoration-two {
+    bottom: 0;
+    inset-inline-start: 0;
+    width: 120px;
+    height: 120px;
+    border: 2px solid var(--fc-accent);
+    border-radius: 24px;
+    opacity: 0.6;
+}
+
+.fc-hero-image-card {
+    position: relative;
+    z-index: 1;
+    border-radius: 24px;
+    overflow: hidden;
+    background-color: var(--fc-section-bg);
+    box-shadow: 0 20px 45px rgba(43, 38, 33, 0.16);
+}
+
+.fc-hero-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 460px;
+    object-fit: cover;
+}
+
+.fc-hero-floating-card {
+    position: absolute;
+    bottom: 1rem;
+    inset-inline-start: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.96);
+    border-radius: 14px;
+    padding: 0.7rem 1rem;
+    box-shadow: var(--fc-shadow);
+}
+
+    .fc-hero-floating-card strong {
+        display: block;
+        font-size: 0.95rem;
+        color: var(--fc-dark);
+        line-height: 1.3;
+    }
+
+    .fc-hero-floating-card span {
+        font-size: 0.82rem;
+        color: var(--fc-text-muted);
+    }
+
+.fc-floating-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: var(--fc-primary-soft);
+    color: var(--fc-primary);
+    font-size: 1.3rem;
+}
+
+
+/* ---------- Sections ---------- */
+
+.fc-section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+}
+
+.fc-products-section {
+    background-color: var(--fc-section-bg);
+}
+
+.fc-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.fc-section-eyebrow {
+    display: block;
+    color: var(--fc-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.fc-section-title {
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-weight: 800;
+    margin: 0;
+}
+
+.fc-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0;
+    font-weight: 600;
+    color: var(--fc-primary);
+    text-decoration: none;
+}
+
+    .fc-view-all:hover {
+        color: var(--fc-primary-hover);
+        gap: 0.65rem;
+    }
+
+
+/* ---------- Category cards ---------- */
+
+.fc-category-card {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: var(--fc-dark);
+}
+
+.fc-category-image-wrapper {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--fc-radius-lg);
+    overflow: hidden;
+    background-color: var(--fc-section-bg);
+    border: 1px solid var(--fc-border);
+    box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-category-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s var(--fc-ease);
+}
+
+.fc-category-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(43, 38, 33, 0.45);
+    color: #FFFFFF;
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.25s var(--fc-ease);
+}
+
+.fc-category-card h3 {
+    margin: 0.75rem 0 0;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: color 0.2s var(--fc-ease);
+}
+
+.fc-category-card:hover .fc-category-image,
+.fc-category-card:focus-visible .fc-category-image {
+    transform: scale(1.06);
+}
+
+.fc-category-card:hover .fc-category-overlay,
+.fc-category-card:focus-visible .fc-category-overlay {
+    opacity: 1;
+}
+
+.fc-category-card:hover h3 {
+    color: var(--fc-primary);
+}
+
+
+/* ---------- Product cards ---------- */
+
+.fc-product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--fc-shadow-sm);
+    transition: box-shadow 0.3s var(--fc-ease), border-color 0.3s var(--fc-ease), transform 0.3s var(--fc-ease);
+}
+
+    .fc-product-card:hover {
+        box-shadow: var(--fc-shadow-hover);
+        border-color: var(--fc-border-strong);
+        transform: translateY(-4px);
+    }
+
+.fc-product-image-wrapper {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background-color: var(--fc-section-bg);
+}
+
+    .fc-product-image-wrapper .fc-product-image {
+        width: 100%;
+        height: 100%;
+        transition: transform 0.45s var(--fc-ease);
+    }
+
+.fc-product-card:hover .fc-product-image {
+    transform: scale(1.05);
+}
+
+.fc-product-badge {
+    position: absolute;
+    top: 0.75rem;
+    inset-inline-start: 0.75rem;
+    z-index: 2;
+    background-color: var(--fc-primary);
+    color: #FFFFFF;
+    border-radius: 50px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.fc-product-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(43, 38, 33, 0.35);
+    opacity: 0;
+    transition: opacity 0.25s var(--fc-ease);
+}
+
+.fc-product-card:hover .fc-product-overlay,
+.fc-product-card:focus-within .fc-product-overlay {
+    opacity: 1;
+}
+
+.fc-product-quick-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: #FFFFFF;
+    color: var(--fc-dark);
+    font-size: 1.15rem;
+    text-decoration: none;
+    box-shadow: var(--fc-shadow);
+    transition: background-color 0.2s var(--fc-ease), color 0.2s var(--fc-ease);
+}
+
+    .fc-product-quick-btn:hover {
+        background-color: var(--fc-primary);
+        color: #FFFFFF;
+    }
+
+.fc-product-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.4rem;
+    padding: 1.1rem 1.15rem 1.2rem;
+}
+
+.fc-product-category {
+    color: var(--fc-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.fc-product-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fc-product-description {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--fc-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fc-product-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--fc-border);
+}
+
+.fc-product-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--fc-dark);
+    white-space: nowrap;
+}
+
+    .fc-product-price small {
+        margin-inline-start: 0.2rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--fc-text-muted);
+    }
+
+.fc-product-details {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    background-color: var(--fc-primary-soft);
+    color: var(--fc-primary-active);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s var(--fc-ease), color 0.2s var(--fc-ease);
+}
+
+    .fc-product-details:hover {
+        background-color: var(--fc-primary);
+        color: #FFFFFF;
+    }
+
+/* The hover button has no use on touch screens; the
+   "details" link on each card does the same job. */
+@media (hover: none) {
+    .fc-product-overlay {
+        display: none;
+    }
+}
+
+
+/* ---------- Features ---------- */
+
+.fc-features-section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+    background-color: #FCFAF6;
+    border-top: 1px solid var(--fc-border);
+    border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-feature-card {
+    height: 100%;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow-sm);
+    transition: box-shadow 0.3s var(--fc-ease), border-color 0.3s var(--fc-ease);
+}
+
+    .fc-feature-card:hover {
+        box-shadow: var(--fc-shadow-hover);
+        border-color: var(--fc-border-strong);
+    }
+
+    .fc-feature-card h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .fc-feature-card p {
+        margin: 0;
+        color: var(--fc-text-muted);
+        line-height: 1.8;
+    }
+
+.fc-feature-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.1rem;
+    border-radius: 50%;
+    background-color: var(--fc-primary-soft);
+    color: var(--fc-primary);
+    font-size: 1.6rem;
+}
+
+
+/* ---------- Call to action ---------- */
+
+.fc-cta-section {
+    padding: clamp(3rem, 6vw, 5rem) 0 0;
+}
+
+.fc-cta {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    overflow: hidden;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    border-radius: 24px;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #6F5440 0%, #3A312A 100%);
+    box-shadow: var(--fc-shadow-hover);
+}
+
+.fc-cta-content {
+    position: relative;
+    z-index: 1;
+    max-width: 34rem;
+}
+
+.fc-cta-eyebrow {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #E8C79C;
+    font-weight: 600;
+}
+
+.fc-cta h2 {
+    color: #FFFFFF;
+    font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.fc-cta p {
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+}
+
+.fc-cta-btn {
+    background-color: #FFFFFF;
+    color: var(--fc-dark);
+    border: 0;
+    border-radius: var(--fc-radius);
+    font-weight: 700;
+    padding: 0.65rem 1.6rem;
+    transition: background-color 0.25s var(--fc-ease), transform 0.25s var(--fc-ease);
+}
+
+    .fc-cta-btn:hover {
+        background-color: var(--fc-sand);
+        color: var(--fc-dark);
+        transform: translateY(-1px);
+    }
+
+.fc-cta-decoration {
+    flex-shrink: 0;
+    font-size: clamp(5rem, 12vw, 9rem);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.14);
+}
+
+
+/* ---------- Empty state ---------- */
+
+.fc-empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    background-color: var(--fc-card-bg);
+    border: 1px dashed var(--fc-border-strong);
+    border-radius: var(--fc-radius-lg);
+}
+
+    .fc-empty-state i {
+        display: block;
+        margin-bottom: 0.75rem;
+        font-size: 2.5rem;
+        color: var(--fc-primary);
+    }
+
+    .fc-empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .fc-empty-state p {
+        margin: 0;
+        color: var(--fc-text-muted);
+    }
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 991.98px) {
+    .fc-hero {
+        border-radius: 0 0 24px 24px;
+    }
+
+    .fc-hero-image-wrapper {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .fc-main {
+        margin-top: 70px;
+    }
+
+    .fc-section-header {
+        align-items: flex-start;
+    }
+
+    .fc-hero-actions .btn {
+        flex: 1 1 100%;
+    }
+
+    .fc-hero-stats {
+        gap: 1rem;
+    }
+
+    .fc-cta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fc-cta-decoration {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fc-category-card:hover .fc-category-image,
+    .fc-product-card:hover .fc-product-image {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   =========================================================
+   ANIMATIONS (added)
+   - Hero plays a staged entrance on page load (CSS only).
+   - Cards and sections fade in as they scroll into view
+     (needs furnicraft-animations.js).
+   - All motion is switched off for users who prefer
+     reduced motion.
+   =========================================================
+   ========================================================= */
+
+@keyframes fc-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(26px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fc-zoom-in {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fc-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes fc-drift {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(8px, -12px) rotate(6deg);
+    }
+}
+
+@keyframes fc-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.25) rotate(12deg);
+    }
+}
+
+@keyframes fc-sway {
+    0%, 100% {
+        transform: rotate(-5deg);
+    }
+
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+
+/* ---------- Hero entrance ---------- */
+
+.fc-hero-content > * {
+    animation: fc-fade-up 0.8s var(--fc-ease) both;
+}
+
+    .fc-hero-content > *:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    .fc-hero-content > *:nth-child(2) {
+        animation-delay: 0.15s;
+    }
+
+    .fc-hero-content > *:nth-child(3) {
+        animation-delay: 0.25s;
+    }
+
+    .fc-hero-content > *:nth-child(4) {
+        animation-delay: 0.35s;
+    }
+
+    .fc-hero-content > *:nth-child(5) {
+        animation-delay: 0.45s;
+    }
+
+.fc-hero-image-card {
+    animation: fc-zoom-in 0.95s var(--fc-ease) 0.2s both;
+}
+
+.fc-hero-floating-card {
+    animation: fc-float 5s ease-in-out 1.2s infinite;
+}
+
+.fc-decoration-one {
+    animation: fc-drift 9s ease-in-out infinite;
+}
+
+.fc-decoration-two {
+    animation: fc-drift 11s ease-in-out -4s infinite reverse;
+}
+
+.fc-hero-badge i {
+    display: inline-block;
+    animation: fc-pulse 2.6s ease-in-out 1s infinite;
+}
+
+
+/* ---------- Scroll reveal (classes added by JS) ---------- */
+
+.fc-reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s var(--fc-ease), transform 0.7s var(--fc-ease);
+    transition-delay: var(--fc-delay, 0s);
+}
+
+    .fc-reveal.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+
+
+/* ---------- Navbar shrinks a little after scrolling ---------- */
+
+.fc-navbar {
+    transition: box-shadow 0.3s var(--fc-ease), padding 0.3s var(--fc-ease);
+}
+
+    .fc-navbar.is-scrolled {
+        padding: 0.45rem 0;
+        box-shadow: 0 6px 22px rgba(43, 38, 33, 0.1);
+    }
+
+
+/* ---------- Buttons: light sweep + arrow nudge ---------- */
+
+.btn-fc-primary {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+    .btn-fc-primary::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -80%;
+        width: 50%;
+        background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0) 100%);
+        transform: skewX(-20deg);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .btn-fc-primary:hover::after {
+        left: 140%;
+        transition: left 0.7s var(--fc-ease);
+    }
+
+.btn .bi-arrow-left,
+.btn .bi-arrow-down,
+.fc-view-all .bi-arrow-left,
+.fc-product-details .bi-arrow-left {
+    display: inline-block;
+    transition: transform 0.25s var(--fc-ease);
+}
+
+.btn:hover .bi-arrow-left,
+.fc-view-all:hover .bi-arrow-left,
+.fc-product-details:hover .bi-arrow-left {
+    transform: translateX(-5px);
+}
+
+.btn:hover .bi-arrow-down {
+    transform: translateY(4px);
+}
+
+/* Use the arrow nudge instead of changing spacing on hover */
+.fc-view-all:hover {
+    gap: 0.4rem;
+}
+
+
+/* ---------- Cards ---------- */
+
+.fc-feature-card {
+    transition: box-shadow 0.3s var(--fc-ease), border-color 0.3s var(--fc-ease), transform 0.3s var(--fc-ease);
+}
+
+    .fc-feature-card:hover {
+        transform: translateY(-4px);
+    }
+
+.fc-feature-icon {
+    transition: transform 0.35s var(--fc-ease), background-color 0.3s var(--fc-ease), color 0.3s var(--fc-ease);
+}
+
+.fc-feature-card:hover .fc-feature-icon {
+    transform: translateY(-4px) rotate(-8deg) scale(1.06);
+    background-color: var(--fc-primary);
+    color: #FFFFFF;
+}
+
+.fc-product-quick-btn {
+    transform: scale(0.8);
+    transition: transform 0.3s var(--fc-ease), background-color 0.2s var(--fc-ease), color 0.2s var(--fc-ease);
+}
+
+.fc-product-card:hover .fc-product-quick-btn,
+.fc-product-card:focus-within .fc-product-quick-btn {
+    transform: scale(1);
+}
+
+.fc-product-badge {
+    transition: transform 0.3s var(--fc-ease);
+}
+
+.fc-product-card:hover .fc-product-badge {
+    transform: translateY(2px) scale(1.05);
+}
+
+
+/* ---------- Call to action ---------- */
+
+.fc-cta-decoration i {
+    display: inline-block;
+    transform-origin: 50% 0;
+    animation: fc-sway 4.5s ease-in-out infinite;
+}
+
+
+/* ---------- Smooth anchor scrolling (below the fixed navbar) ---------- */
+
+html {
+    scroll-behavior: smooth;
+}
+
+#categories {
+    scroll-margin-top: 80px;
+}
+
+
+/* ---------- Reduced motion: turn everything off ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+
+    .fc-reveal {
+        opacity: 1;
+        transform: none;
+    }
+
+    .fc-product-quick-btn {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   =========================================================
+   BRAND COLOUR FOR BOOTSTRAP "PRIMARY" (added)
+   Bootstrap's default blue was showing on icons and text.
+   These make every .text-primary / .btn-primary use the
+   FurniCraft brown across the whole site.
+   =========================================================
+   ========================================================= */
+
+.text-primary {
+    color: var(--fc-primary) !important;
+}
+
+.bg-primary {
+    background-color: var(--fc-primary) !important;
+}
+
+.border-primary {
+    border-color: var(--fc-primary) !important;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--fc-primary);
+    --bs-btn-border-color: var(--fc-primary);
+    --bs-btn-hover-bg: var(--fc-primary-hover);
+    --bs-btn-hover-border-color: var(--fc-primary-hover);
+    --bs-btn-active-bg: var(--fc-primary-active);
+    --bs-btn-active-border-color: var(--fc-primary-active);
+    --bs-btn-disabled-bg: var(--fc-disabled-bg);
+    --bs-btn-disabled-border-color: var(--fc-disabled-bg);
+    --bs-btn-disabled-color: var(--fc-disabled-text);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--fc-primary);
+    --bs-btn-border-color: var(--fc-primary);
+    --bs-btn-hover-bg: var(--fc-primary);
+    --bs-btn-hover-border-color: var(--fc-primary);
+    --bs-btn-active-bg: var(--fc-primary-active);
+    --bs-btn-active-border-color: var(--fc-primary-active);
+}
+
+
+/* =========================================================
+   =========================================================
+   PRODUCT DETAILS PAGE (added)
+   =========================================================
+   ========================================================= */
+
+.fc-details {
+    padding-top: 1.5rem;
+}
+
+/* ---------- Breadcrumb ---------- */
+
+.fc-breadcrumb {
+    --bs-breadcrumb-divider-color: var(--fc-text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+    .fc-breadcrumb a {
+        color: var(--fc-text-muted);
+        text-decoration: none;
+    }
+
+        .fc-breadcrumb a:hover {
+            color: var(--fc-primary);
+        }
+
+    .fc-breadcrumb .active {
+        color: var(--fc-dark);
+        font-weight: 600;
+    }
+
+
+/* ---------- Gallery ---------- */
+
+.fc-gallery-frame {
+    padding: 0.6rem;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow);
+}
+
+.fc-gallery-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-height: 560px;
+    object-fit: cover;
+    border-radius: 12px;
+    background-color: var(--fc-section-bg);
+}
+
+.fc-trust {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+}
+
+.fc-trust-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 0.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--fc-text);
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+}
+
+    .fc-trust-item i {
+        font-size: 1.35rem;
+        color: var(--fc-primary);
+    }
+
+@media (min-width: 992px) {
+    .fc-gallery {
+        position: sticky;
+        top: 100px;
+    }
+}
+
+
+/* ---------- Header ---------- */
+
+.fc-details-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.fc-details-title {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.fc-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.fc-stock--in {
+    background-color: #EEF4EA;
+    color: #2F4A25;
+}
+
+.fc-stock--low {
+    background-color: #FBF3E3;
+    color: #6B4E12;
+}
+
+.fc-stock--out {
+    background-color: #F9ECE9;
+    color: #7A2B1F;
+}
+
+
+/* ---------- Description ---------- */
+
+.fc-description {
+    margin-bottom: 1.25rem;
+}
+
+.fc-description-text {
+    margin: 0;
+    color: var(--fc-text-muted);
+    line-height: 1.9;
+    text-align: start;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+    .fc-description-text.is-expanded {
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+    }
+
+.fc-link-btn {
+    margin-top: 0.4rem;
+    padding: 0.2rem 0;
+    background: none;
+    border: 0;
+    color: var(--fc-primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(140, 109, 83, 0.4);
+    text-underline-offset: 4px;
+}
+
+    .fc-link-btn:hover {
+        color: var(--fc-primary-hover);
+    }
+
+
+/* ---------- Price ---------- */
+
+.fc-price-box {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #F3E9DC 0%, #F9F4EC 100%);
+    border: 1px solid var(--fc-border);
+    border-inline-start: 4px solid var(--fc-primary);
+    border-radius: var(--fc-radius);
+}
+
+.fc-price-label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--fc-text-muted);
+}
+
+.fc-price-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    color: var(--fc-primary-active);
+    font-size: 2.1rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+    .fc-price-value small {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+
+/* ---------- Panels ---------- */
+
+.fc-panel {
+    margin-bottom: 1.25rem;
+    padding: 1.25rem 1.4rem;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.fc-panel-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background-color: var(--fc-primary-soft);
+    color: var(--fc-primary);
+    font-size: 1rem;
+}
+
+
+/* ---------- Customization options ---------- */
+
+.fc-option-group {
+    min-width: 0;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    border: 0;
+}
+
+    .fc-option-group:last-child {
+        margin-bottom: 0;
+    }
+
+.fc-option-legend {
+    float: none;
+    width: auto;
+    margin-bottom: 0.6rem;
+    padding: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--fc-dark);
+}
+
+.fc-option-list {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.fc-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background-color: #FFFFFF;
+    border: 1.5px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+    cursor: pointer;
+    transition: border-color 0.2s var(--fc-ease), background-color 0.2s var(--fc-ease), box-shadow 0.2s var(--fc-ease);
+}
+
+    .fc-option:hover {
+        border-color: var(--fc-border-strong);
+        background-color: #FDFBF8;
+    }
+
+    .fc-option:has(input:checked),
+    .fc-option.is-selected {
+        border-color: var(--fc-primary);
+        background-color: #FBF6EF;
+        box-shadow: 0 0 0 3px var(--fc-primary-soft);
+    }
+
+    .fc-option:focus-within {
+        outline: 3px solid var(--fc-focus);
+        outline-offset: 2px;
+    }
+
+.fc-option-main {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+}
+
+    .fc-option-main .form-check-input {
+        flex-shrink: 0;
+        margin: 0;
+        cursor: pointer;
+    }
+
+.fc-option-name {
+    font-weight: 500;
+    color: var(--fc-dark);
+}
+
+.fc-option-price {
+    flex-shrink: 0;
+    padding: 0.2rem 0.7rem;
+    border-radius: 50px;
+    background-color: #EEF4EA;
+    color: #2F4A25;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.fc-option-price--free {
+    background-color: var(--fc-section-bg);
+    color: var(--fc-text-muted);
+    font-weight: 600;
+}
+
+
+/* ---------- Quantity ---------- */
+
+.fc-qty-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.fc-stepper {
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    background-color: #FFFFFF;
+    border: 1.5px solid var(--fc-border-strong);
+    border-radius: var(--fc-radius);
+    transition: border-color 0.2s var(--fc-ease), box-shadow 0.2s var(--fc-ease);
+}
+
+    .fc-stepper:focus-within {
+        border-color: var(--fc-primary);
+        box-shadow: 0 0 0 0.22rem var(--fc-focus);
+    }
+
+    .fc-stepper button {
+        width: 46px;
+        height: 46px;
+        border: 0;
+        background: transparent;
+        color: var(--fc-primary);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: background-color 0.2s var(--fc-ease), color 0.2s var(--fc-ease);
+    }
+
+        .fc-stepper button:hover:not(:disabled) {
+            background-color: var(--fc-primary-soft);
+            color: var(--fc-primary-active);
+        }
+
+        .fc-stepper button:disabled {
+            color: var(--fc-disabled-text);
+            background-color: var(--fc-section-bg);
+            cursor: not-allowed;
+        }
+
+    .fc-stepper input {
+        width: 68px;
+        height: 46px;
+        border: 0;
+        border-inline: 1px solid var(--fc-border);
+        background-color: #FFFFFF;
+        color: var(--fc-dark);
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 700;
+        outline: none;
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+        .fc-stepper input::-webkit-outer-spin-button,
+        .fc-stepper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+.fc-hint {
+    margin: 0.85rem 0 0;
+    font-size: 0.85rem;
+    color: var(--fc-text-muted);
+}
+
+
+/* ---------- Total + actions ---------- */
+
+.fc-buy {
+    padding: 1.25rem 1.4rem;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow);
+}
+
+.fc-total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--fc-border-strong);
+}
+
+.fc-total-label {
+    font-weight: 600;
+    color: var(--fc-text-muted);
+}
+
+.fc-total-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    color: var(--fc-dark);
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+    .fc-total-value small {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--fc-text-muted);
+    }
+
+.fc-back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    color: var(--fc-text-muted);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+    .fc-back-link:hover {
+        color: var(--fc-primary);
+    }
+
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 575.98px) {
+    .fc-panel,
+    .fc-buy {
+        padding: 1rem;
+    }
+
+    .fc-trust-item {
+        font-size: 0.78rem;
+    }
+
+    .fc-qty-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fc-stepper {
+        align-self: center;
+    }
+}
+
+
+/* =========================================================
+   PRODUCT DETAILS: organised description sections (added)
+   ========================================================= */
+
+/* ---------- Short intro next to the price ---------- */
+
+.fc-lead {
+    margin-bottom: 1.25rem;
+}
+
+.fc-lead-title {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--fc-dark);
+    text-align: start;
+}
+
+.fc-lead-text {
+    margin: 0 0 0.5rem;
+    color: var(--fc-text-muted);
+    line-height: 1.9;
+    text-align: start;
+}
+
+/* Plain (unstructured) descriptions keep their own line breaks */
+.fc-description-text {
+    white-space: pre-line;
+}
+
+
+/* ---------- Sections grid ---------- */
+
+.fc-detail-section {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: clamp(2rem, 4vw, 3rem);
+    border-top: 1px solid var(--fc-border);
+}
+
+.fc-detail-heading {
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding-inline-start: 1rem;
+    font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+    font-weight: 800;
+}
+
+    .fc-detail-heading::before {
+        content: "";
+        position: absolute;
+        inset-block: 0.15em;
+        inset-inline-start: 0;
+        width: 4px;
+        border-radius: 4px;
+        background-color: var(--fc-primary);
+    }
+
+.fc-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.fc-detail-card {
+    padding: 1.4rem;
+    background-color: var(--fc-card-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-detail-card--wide {
+    grid-column: 1 / -1;
+}
+
+.fc-detail-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--fc-border);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.fc-detail-text {
+    margin: 0;
+    color: var(--fc-text-muted);
+    line-height: 1.9;
+    text-align: start;
+}
+
+    .fc-detail-text + .fc-detail-text {
+        margin-top: 0.75rem;
+    }
+
+
+/* ---------- Spec tiles (Width / Depth / Height) ---------- */
+
+.fc-spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.fc-spec {
+    padding: 0.85rem 0.5rem;
+    text-align: center;
+    background-color: var(--fc-section-bg);
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+}
+
+    .fc-spec dt {
+        margin-bottom: 0.2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--fc-text-muted);
+    }
+
+    .fc-spec dd {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--fc-primary-active);
+        text-align: center;
+    }
+
+
+/* ---------- Checklist ---------- */
+
+.fc-checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 0.75rem 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+    .fc-checklist li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        line-height: 1.7;
+        color: var(--fc-text);
+        text-align: start;
+    }
+
+        .fc-checklist li i {
+            flex-shrink: 0;
+            margin-top: 0.3rem;
+            color: var(--fc-primary);
+        }

@@ -1,173 +1,136 @@
 ﻿@model FurniCraft.ViewModels.AdminDashboardViewModel
 
 @{
-    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Title"] = "لوحة التحكم";
 }
 
 <div class="container-fluid py-4">
 
     <!-- Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-
         <div>
-            <span class="text-uppercase small fw-semibold text-muted">
-                FurniCraft Administration
-            </span>
-
             <h1 class="fw-bold mb-1">
-                Admin Dashboard
+                <i class="bi bi-speedometer2 text-primary me-2"></i>
+                لوحة التحكم
             </h1>
 
             <p class="text-muted mb-0">
-                Manage your store and monitor your business from one place.
+                نظرة سريعة على حالة المتجر والطلبات والمنتجات.
             </p>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
             <a asp-controller="Products"
-               asp-action="AdminIndex"
-               class="btn btn-dark">
-                <i class="bi bi-box-seam me-2"></i>
-                Products
+               asp-action="Create"
+               class="btn btn-fc-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                إضافة منتج
             </a>
 
             <a asp-controller="Orders"
                asp-action="AdminIndex"
-               class="btn btn-outline-dark">
-                <i class="bi bi-receipt me-2"></i>
-                Orders
+               class="btn btn-fc-outline">
+                <i class="bi bi-receipt me-1"></i>
+                إدارة الطلبات
             </a>
         </div>
-
     </div>
 
 
-    <!-- Statistics -->
+    <!-- Main Statistics -->
     <div class="row g-4 mb-4">
 
         <!-- Products -->
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-2">إجمالي المنتجات</p>
 
-                    <div class="d-flex justify-content-between align-items-start">
+                        <h2 class="fw-bold mb-1">
+                            @Model.TotalProducts
+                        </h2>
 
-                        <div>
-                            <p class="text-muted mb-2">
-                                Total Products
-                            </p>
-
-                            <h2 class="fw-bold mb-1">
-                                @Model.TotalProducts
-                            </h2>
-
-                            <small class="text-success">
-                                @Model.ActiveProducts active
-                            </small>
-                        </div>
-
-                        <div class="bg-dark text-white rounded-3 p-3">
-                            <i class="bi bi-box-seam fs-4"></i>
-                        </div>
-
+                        <small class="text-muted">
+                            كل المنتجات المسجلة
+                        </small>
                     </div>
 
+                    <div class="fs-2 text-primary">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
                 </div>
             </div>
         </div>
 
 
         <!-- Orders -->
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-2">إجمالي الطلبات</p>
 
-                    <div class="d-flex justify-content-between align-items-start">
+                        <h2 class="fw-bold mb-1">
+                            @Model.TotalOrders
+                        </h2>
 
-                        <div>
-                            <p class="text-muted mb-2">
-                                Total Orders
-                            </p>
-
-                            <h2 class="fw-bold mb-1">
-                                @Model.TotalOrders
-                            </h2>
-
-                            <small class="text-warning">
-                                @Model.PendingOrders pending
-                            </small>
-                        </div>
-
-                        <div class="bg-warning text-dark rounded-3 p-3">
-                            <i class="bi bi-cart-check fs-4"></i>
-                        </div>
-
+                        <small class="text-muted">
+                            جميع الطلبات
+                        </small>
                     </div>
 
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Revenue -->
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-
-                    <div class="d-flex justify-content-between align-items-start">
-
-                        <div>
-                            <p class="text-muted mb-2">
-                                Total Revenue
-                            </p>
-
-                            <h2 class="fw-bold mb-1">
-                                @Model.TotalRevenue.ToString("N2")
-                            </h2>
-
-                            <small class="text-muted">
-                                EGP
-                            </small>
-                        </div>
-
-                        <div class="bg-success text-white rounded-3 p-3">
-                            <i class="bi bi-cash-stack fs-4"></i>
-                        </div>
-
+                    <div class="fs-2 text-primary">
+                        <i class="bi bi-receipt-cutoff"></i>
                     </div>
-
                 </div>
             </div>
         </div>
 
 
         <!-- Users -->
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-2">المستخدمون</p>
 
-                    <div class="d-flex justify-content-between align-items-start">
+                        <h2 class="fw-bold mb-1">
+                            @Model.TotalUsers
+                        </h2>
 
-                        <div>
-                            <p class="text-muted mb-2">
-                                Registered Users
-                            </p>
-
-                            <h2 class="fw-bold mb-1">
-                                @Model.TotalUsers
-                            </h2>
-
-                            <small class="text-info">
-                                Customers
-                            </small>
-                        </div>
-
-                        <div class="bg-info text-white rounded-3 p-3">
-                            <i class="bi bi-people fs-4"></i>
-                        </div>
-
+                        <small class="text-muted">
+                            حسابات العملاء
+                        </small>
                     </div>
 
+                    <div class="fs-2 text-primary">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Revenue -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-2">إجمالي الإيرادات</p>
+
+                        <h2 class="fw-bold mb-1">
+                            @Model.TotalRevenue.ToString("N0")
+                        </h2>
+
+                        <small class="text-muted">
+                            جنيه مصري
+                        </small>
+                    </div>
+
+                    <div class="fs-2 text-success">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,91 +138,231 @@
     </div>
 
 
-    <!-- Second Row -->
+    <!-- Secondary Statistics -->
     <div class="row g-4 mb-4">
 
-        <!-- Low Stock -->
-        <div class="col-lg-4">
-
-            <div class="card border-0 shadow-sm h-100">
-
-                <div class="card-body p-4">
-
-                    <div class="d-flex align-items-center gap-3 mb-4">
-
-                        <div class="bg-danger-subtle text-danger rounded-3 p-3">
-                            <i class="bi bi-exclamation-triangle fs-4"></i>
-                        </div>
-
-                        <div>
-                            <h5 class="fw-bold mb-1">
-                                Low Stock
-                            </h5>
-
-                            <p class="text-muted mb-0">
-                                Products that need attention
-                            </p>
-                        </div>
-
+        <!-- Active Products -->
+        <div class="col-md-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3 text-success">
+                        <i class="bi bi-check-circle"></i>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">المنتجات النشطة</p>
 
-                        <span class="display-6 fw-bold">
-                            @Model.LowStockProducts
-                        </span>
-
-                        <span class="text-muted">
-                            products
-                        </span>
-
+                        <h4 class="fw-bold mb-0">
+                            @Model.ActiveProducts
+                        </h4>
                     </div>
-
                 </div>
-
             </div>
+        </div>
 
+
+        <!-- Low Stock -->
+        <div class="col-md-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3 text-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+
+                    <div>
+                        <p class="text-muted mb-1">مخزون منخفض</p>
+
+                        <h4 class="fw-bold mb-0">
+                            @Model.LowStockProducts
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Pending Orders -->
+        <div class="col-md-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3 text-info">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+
+                    <div>
+                        <p class="text-muted mb-1">طلبات قيد الانتظار</p>
+
+                        <h4 class="fw-bold mb-0">
+                            @Model.PendingOrders
+                        </h4>
+                    </div>
+                </div>
+            </div>
         </div>
 
 
         <!-- Delivered Orders -->
-        <div class="col-lg-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="fc-card h-100 p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3 text-success">
+                        <i class="bi bi-bag-check"></i>
+                    </div>
 
-            <div class="card border-0 shadow-sm h-100">
+                    <div>
+                        <p class="text-muted mb-1">طلبات تم تسليمها</p>
 
-                <div class="card-body p-4">
+                        <h4 class="fw-bold mb-0">
+                            @Model.DeliveredOrders
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="d-flex align-items-center gap-3 mb-4">
+    </div>
 
-                        <div class="bg-success-subtle text-success rounded-3 p-3">
-                            <i class="bi bi-check-circle fs-4"></i>
-                        </div>
+
+    <!-- Recent Orders + Quick Actions -->
+    <div class="row g-4">
+
+        <!-- Recent Orders -->
+        <div class="col-xl-8">
+
+            <div class="fc-card">
+
+                <div class="p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
 
                         <div>
                             <h5 class="fw-bold mb-1">
-                                Delivered Orders
+                                <i class="bi bi-clock-history text-primary me-2"></i>
+                                أحدث الطلبات
                             </h5>
 
-                            <p class="text-muted mb-0">
-                                Successfully completed
-                            </p>
+                            <small class="text-muted">
+                                آخر الطلبات التي تم تسجيلها في المتجر
+                            </small>
                         </div>
 
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <span class="display-6 fw-bold">
-                            @Model.DeliveredOrders
-                        </span>
-
-                        <span class="text-muted">
-                            orders
-                        </span>
+                        <a asp-controller="Orders"
+                           asp-action="AdminIndex"
+                           class="btn btn-sm btn-fc-outline">
+                            عرض الكل
+                        </a>
 
                     </div>
+                </div>
+
+
+                @if (Model.RecentOrders.Any())
+                {
+                <div class="table-responsive">
+
+                    <table class="table align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>الطلب</th>
+                                <th>العميل</th>
+                                <th>الإجمالي</th>
+                                <th>الحالة</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var order in Model.RecentOrders)
+                                {
+                            <tr>
+
+                                <td>
+                                    <span class="fw-bold text-primary">
+                                        #@order.OrderNumber
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">
+                                        @order.CustomerName
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-bold">
+                                        @order.TotalAmount.ToString("N0") ج.م
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (order.Status == "Pending")
+                                            {
+                                    <span class="badge bg-warning text-dark">
+                                        قيد الانتظار
+                                    </span>
+                                            }
+                                            else if (order.Status == "Processing")
+                                            {
+                                    <span class="badge bg-info text-dark">
+                                        قيد التحضير
+                                    </span>
+                                            }
+                                            else if (order.Status == "Shipped")
+                                            {
+                                    <span class="badge bg-primary">
+                                        تم الشحن
+                                    </span>
+                                            }
+                                            else if (order.Status == "Delivered")
+                                            {
+                                    <span class="badge bg-success">
+                                        تم التسليم
+                                    </span>
+                                            }
+                                            else if (order.Status == "Cancelled")
+                                            {
+                                    <span class="badge bg-danger">
+                                        ملغي
+                                    </span>
+                                            }
+                                            else
+                                            {
+                                    <span class="badge bg-secondary">
+                                        @order.Status
+                                    </span>
+                                            }
+                                </td>
+
+                                <td>
+                                    <small class="text-muted">
+                                        @order.OrderDate.ToLocalTime().ToString("yyyy/MM/dd")
+                                    </small>
+                                </td>
+
+                            </tr>
+                                }
+
+                        </tbody>
+
+                    </table>
 
                 </div>
+                }
+                else
+                {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+
+                    <h6 class="fw-bold mt-3">
+                        لا توجد طلبات حتى الآن
+                    </h6>
+
+                    <p class="text-muted mb-0">
+                        ستظهر الطلبات الجديدة هنا.
+                    </p>
+                </div>
+                }
 
             </div>
 
@@ -267,196 +370,56 @@
 
 
         <!-- Quick Actions -->
-        <div class="col-lg-4">
+        <div class="col-xl-4">
 
-            <div class="card border-0 shadow-sm h-100">
+            <div class="fc-card p-4 h-100">
 
-                <div class="card-body p-4">
+                <h5 class="fw-bold mb-1">
+                    <i class="bi bi-lightning-charge text-warning me-2"></i>
+                    إجراءات سريعة
+                </h5>
 
-                    <h5 class="fw-bold mb-3">
-                        Quick Actions
-                    </h5>
-
-                    <div class="d-grid gap-2">
-
-                        <a asp-controller="Products"
-                           asp-action="Create"
-                           class="btn btn-dark">
-                            <i class="bi bi-plus-lg me-2"></i>
-                            Add Product
-                        </a>
-
-                        <a asp-controller="Categories"
-                           asp-action="Create"
-                           class="btn btn-outline-dark">
-                            <i class="bi bi-folder-plus me-2"></i>
-                            Add Category
-                        </a>
-
-                        <a asp-controller="Orders"
-                           asp-action="AdminIndex"
-                           class="btn btn-outline-dark">
-                            <i class="bi bi-receipt me-2"></i>
-                            Manage Orders
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- Recent Orders -->
-    <div class="card border-0 shadow-sm">
-
-        <div class="card-body p-0">
-
-            <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-
-                <div>
-                    <h5 class="fw-bold mb-1">
-                        Recent Orders
-                    </h5>
-
-                    <p class="text-muted mb-0">
-                        Latest orders placed in your store.
-                    </p>
-                </div>
-
-                <a asp-controller="Orders"
-                   asp-action="AdminIndex"
-                   class="btn btn-sm btn-outline-dark">
-                    View All
-                </a>
-
-            </div>
-
-
-            @if (Model.RecentOrders.Any())
-            {
-            <div class="table-responsive">
-
-                <table class="table align-middle mb-0">
-
-                    <thead class="table-light">
-
-                        <tr>
-                            <th class="px-4">
-                                Order
-                            </th>
-
-                            <th>
-                                Customer
-                            </th>
-
-                            <th>
-                                Date
-                            </th>
-
-                            <th>
-                                Total
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @foreach (var order in Model.RecentOrders)
-                            {
-                        <tr>
-
-                            <td class="px-4 fw-semibold">
-                                #@order.OrderNumber
-                            </td>
-
-                            <td>
-                                @order.CustomerName
-                            </td>
-
-                            <td>
-                                @order.OrderDate.ToLocalTime().ToString("dd MMM yyyy")
-                            </td>
-
-                            <td class="fw-semibold">
-                                @order.TotalAmount.ToString("N2") EGP
-                            </td>
-
-                            <td>
-
-                                @if (order.Status == "Pending")
-                                        {
-                                <span class="badge bg-warning text-dark">
-                                    Pending
-                                </span>
-                                        }
-                                        else if (order.Status == "Processing")
-                                        {
-                                <span class="badge bg-info">
-                                    Processing
-                                </span>
-                                        }
-                                        else if (order.Status == "Shipped")
-                                        {
-                                <span class="badge bg-primary">
-                                    Shipped
-                                </span>
-                                        }
-                                        else if (order.Status == "Delivered")
-                                        {
-                                <span class="badge bg-success">
-                                    Delivered
-                                </span>
-                                        }
-                                        else if (order.Status == "Cancelled")
-                                        {
-                                <span class="badge bg-danger">
-                                    Cancelled
-                                </span>
-                                        }
-                                        else
-                                        {
-                                <span class="badge bg-secondary">
-                                    @order.Status
-                                </span>
-                                        }
-
-                            </td>
-
-                        </tr>
-                            }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-            }
-            else
-            {
-            <div class="text-center py-5">
-
-                <i class="bi bi-receipt fs-1 text-muted"></i>
-
-                <h6 class="mt-3">
-                    No orders yet
-                </h6>
-
-                <p class="text-muted mb-0">
-                    Orders will appear here once customers place them.
+                <p class="text-muted small mb-4">
+                    الوصول السريع لأهم أجزاء لوحة التحكم.
                 </p>
 
+
+                <div class="d-grid gap-3">
+
+                    <a asp-controller="Products"
+                       asp-action="AdminIndex"
+                       class="btn btn-fc-primary">
+                        <i class="bi bi-box-seam me-2"></i>
+                        إدارة المنتجات
+                    </a>
+
+
+                    <a asp-controller="Products"
+                       asp-action="Create"
+                       class="btn btn-fc-outline">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        إضافة منتج جديد
+                    </a>
+
+
+                    <a asp-controller="Categories"
+                       asp-action="Index"
+                       class="btn btn-fc-outline">
+                        <i class="bi bi-grid me-2"></i>
+                        إدارة التصنيفات
+                    </a>
+
+
+                    <a asp-controller="Orders"
+                       asp-action="AdminIndex"
+                       class="btn btn-fc-outline">
+                        <i class="bi bi-receipt-cutoff me-2"></i>
+                        إدارة الطلبات
+                    </a>
+
+                </div>
+
             </div>
-            }
 
         </div>
 
