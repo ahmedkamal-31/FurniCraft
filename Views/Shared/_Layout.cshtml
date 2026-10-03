@@ -1,12 +1,28 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.DependencyInjection
 @using FurniCraft.Models
 @using FurniCraft.Services
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-@inject CartService CartService
 
 @{
-    var cartCount = CartService.GetCart().Items.Sum(i => i.Quantity);
+    // جلب الخدمات مباشرة من الـ Context لتجنب أخطاء @inject في Razor
+    var signInManager = Context.RequestServices.GetRequiredService<SignInManager<ApplicationUser>>();
+    var userManager = Context.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+    var cartService = Context.RequestServices.GetRequiredService<CartService>();
+
+    var cart = cartService.GetCart();
+    var cartCount = cart?.Items?.Sum(i => i.Quantity) ?? 0;
+    var isSignedIn = signInManager.IsSignedIn(User);
+    ApplicationUser? currentUser = null;
+    var isAdmin = false;
+
+    if (isSignedIn)
+    {
+        currentUser = await userManager.GetUserAsync(User);
+        if (currentUser != null)
+        {
+            isAdmin = await userManager.IsInRoleAsync(currentUser, "Admin");
+        }
+    }
 }
 
 <!DOCTYPE html>
@@ -15,85 +31,125 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FurniCraft</title>
-    
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/furnicraft-theme.css" asp-append-version="true" />
 </head>
 <body>
+
+    <!-- =========================
+         NAVBAR
+         ========================= -->
     <header>
         <nav class="navbar navbar-expand-lg fc-navbar fixed-top">
             <div class="container">
+                <!-- Brand -->
                 <a class="navbar-brand fc-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
                     <i class="bi bi-house-door-fill text-primary"></i>
-                    Furni<span>Craft</span>
+                    <span>Furni<span>Craft</span></span>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <!-- Mobile Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="فتح القائمة">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
+                <!-- Navigation -->
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">الرئيسية</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door me-1"></i>
+                                الرئيسية
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Products" asp-action="Index">المتجر</a>
+                            <a class="nav-link" asp-controller="Products" asp-action="Index">
+                                <i class="bi bi-shop me-1"></i>
+                                المتجر
+                            </a>
                         </li>
                     </ul>
 
+                    <!-- Right Side -->
                     <div class="d-flex align-items-center gap-3">
-                        <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-dark border-0 position-relative p-2">
+                        <!-- Cart -->
+                        <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-dark border-0 position-relative p-2" aria-label="السلة">
                             <i class="bi bi-bag fs-5"></i>
                             @if (cartCount > 0)
                             {
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    @cartCount
-                                </span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                @cartCount
+                            </span>
                             }
                         </a>
 
-                        @if (SignInManager.IsSignedIn(User))
+                        @if (isSignedIn)
                         {
-                            var user = await UserManager.GetUserAsync(User);
-                            var isAdmin = user != null && await UserManager.IsInRoleAsync(user, "Admin");
+                            <!-- User Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-fc-outline dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i>
+                                @(currentUser?.FullName ?? User.Identity?.Name ?? "حسابي")
+                            </button>
 
-                            if (isAdmin)
-                            {
-                                <div class="dropdown me-2">
-                                    <button class="btn btn-outline-dark btn-sm rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-speedometer2 me-1"></i> لوحة الإدارة
-                                    </button>
-                                    <ul class="dropdown-menu shadow-sm">
-                                        <li><a class="dropdown-item" asp-controller="Categories" asp-action="Index"><i class="bi bi-grid me-2"></i>التصنيفات</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Products" asp-action="AdminIndex"><i class="bi bi-box-seam me-2"></i>المنتجات</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Orders" asp-action="AdminIndex"><i class="bi bi-receipt-cutoff me-2"></i>إدارة الطلبات</a></li>
-                                    </ul>
-                                </div>
-                            }
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <!-- My Orders -->
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Orders" asp-action="MyOrders">
+                                        <i class="bi bi-bag-check me-2"></i>
+                                        طلباتي
+                                    </a>
+                                </li>
 
-                            <div class="dropdown">
-                                <button class="btn btn-fc-outline dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle me-1"></i> @(user?.FullName ?? User.Identity?.Name)
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                    <li><a class="dropdown-item" asp-controller="Orders" asp-action="MyOrders"><i class="bi bi-bag-check me-2"></i>طلباتي</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                            <button type="submit" class="dropdown-item text-danger">
-                                                <i class="bi bi-box-arrow-right me-2"></i>تسجيل الخروج
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+                                @if (isAdmin)
+                                    {
+                                <li><hr class="dropdown-divider" /></li>
+ <!-- Admin Dashboard -->
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Index">
+                                        <i class="bi bi-speedometer2 me-2"></i>
+                                        لوحة التحكم
+                                    </a>
+                                </li>
+ <!-- Products -->
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Products" asp-action="AdminIndex">
+                                        <i class="bi bi-box-seam me-2"></i>
+                                        إدارة المنتجات
+                                    </a>
+                                </li>
+ <!-- Orders -->
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Orders" asp-action="AdminIndex">
+                                        <i class="bi bi-receipt-cutoff me-2"></i>
+                                        إدارة الطلبات
+                                    </a>
+                                </li>
+                                    }
+
+                                <li><hr class="dropdown-divider" /></li>
+
+                                <!-- Logout -->
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-box-arrow-right me-2"></i>
+                                            تسجيل الخروج
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                         }
                         else
                         {
-                            <a class="btn btn-fc-outline btn-sm" asp-controller="Account" asp-action="Login">دخول</a>
-                            <a class="btn btn-fc-primary btn-sm" asp-controller="Account" asp-action="Register">حساب جديد</a>
+ <!-- Login -->
+                        <a class="btn btn-fc-outline btn-sm" asp-controller="Account" asp-action="Login">دخول</a>
+
+ <!-- Register -->
+                        <a class="btn btn-fc-primary btn-sm" asp-controller="Account" asp-action="Register">حساب جديد</a>
                         }
                     </div>
                 </div>
@@ -101,24 +157,38 @@
         </nav>
     </header>
 
+    <!-- =========================
+         MAIN CONTENT
+         ========================= -->
     <main role="main" class="flex-shrink-0" style="margin-top: 80px; padding-bottom: 60px;">
         @RenderBody()
     </main>
 
+    <!-- =========================
+         FOOTER
+         ========================= -->
     <footer class="fc-footer py-5 mt-auto">
         <div class="container">
             <div class="row g-4">
+                <!-- About -->
                 <div class="col-lg-4 col-md-6">
                     <h5 class="fc-brand text-white mb-3">Furni<span>Craft</span></h5>
-                    <p class="small text-muted">منصتك الأولى لاقتناء وتخصيص الأثاث المنزلي العصري والراقي بأعلى جودة وأفضل الأسعار.</p>
+                    <p class="small text-muted">
+                        منصتك الأولى لاقتناء وتخصيص الأثاث المنزلي العصري والراقي بأعلى جودة وأفضل الأسعار.
+                    </p>
                 </div>
+
+                <!-- Quick Links -->
                 <div class="col-lg-2 col-md-6">
                     <h6 class="fc-footer-heading">روابط سريعة</h6>
                     <ul class="list-unstyled small">
+                        <li class="mb-2"><a asp-controller="Home" asp-action="Index">الرئيسية</a></li>
                         <li class="mb-2"><a asp-controller="Products" asp-action="Index">المتجر</a></li>
                         <li class="mb-2"><a asp-controller="Cart" asp-action="Index">السلة</a></li>
                     </ul>
                 </div>
+
+                <!-- Contact -->
                 <div class="col-lg-3 col-md-6">
                     <h6 class="fc-footer-heading">تواصل معنا</h6>
                     <ul class="list-unstyled small text-muted">
@@ -126,20 +196,31 @@
                         <li class="mb-2"><i class="bi bi-envelope me-2"></i>support@furnicraft.com</li>
                     </ul>
                 </div>
+
+                <!-- Delivery -->
                 <div class="col-lg-3 col-md-6">
                     <h6 class="fc-footer-heading">الدفع والتوصيل</h6>
-                    <p class="small text-muted">نوفر خدمة الدفع عند الاستلام (Cash on Delivery) لضمان رضاكم التام.</p>
+                    <p class="small text-muted">
+                        نوفر خدمة الدفع عند الاستلام (Cash on Delivery) لضمان رضاكم التام.
+                    </p>
                 </div>
             </div>
-            <hr class="my-4 border-secondary">
+
+            <hr class="my-4 border-secondary" />
+
             <div class="text-center small text-muted">
                 &copy; @DateTime.Now.Year - FurniCraft. جميع الحقوق محفوظة.
             </div>
         </div>
     </footer>
 
+    <!-- =========================
+         SCRIPTS
+         ========================= -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

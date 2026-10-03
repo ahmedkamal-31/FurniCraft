@@ -1,6 +1,11 @@
-﻿@model FurniCraft.Models.Product
+﻿```cshtml
+@model FurniCraft.Models.Product
 @{
     ViewData["Title"] = Model.Name;
+
+    // Convert ICollection to List so we can safely use indexes
+    var customizationGroups = Model.CustomizationGroups?.ToList()
+                              ?? new List<FurniCraft.Models.CustomizationGroup>();
 }
 
 <div class="container my-5">
@@ -67,7 +72,7 @@
                 </div>
 
                 <!-- خيارات التخصيص -->
-                @if (Model.CustomizationGroups != null && Model.CustomizationGroups.Any())
+                @if (customizationGroups.Any())
                 {
                 <div class="fc-card p-4 mb-4">
 
@@ -76,8 +81,10 @@
                         تخصيصات واستبدالات القطعة
                     </h5>
 
-                    @foreach (var group in Model.CustomizationGroups)
+                    @for (var groupIndex = 0; groupIndex < customizationGroups.Count; groupIndex++)
                         {
+                            var group = customizationGroups[groupIndex];
+
                     <div class="mb-4">
 
                         <label class="form-label fw-bold small text-dark mb-2">
@@ -97,7 +104,7 @@
 
                                 <div>
                                     <input type="radio"
-                                           name="selectedOptionIds"
+                                           name="selectedOptionIds[@groupIndex]"
                                            value="@opt.Id"
                                            data-price="@opt.AdditionalPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                            class="form-check-input me-2 option-radio"
@@ -347,3 +354,4 @@
 
     </script>
 }
+```

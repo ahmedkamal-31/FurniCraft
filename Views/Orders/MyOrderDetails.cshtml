@@ -1,0 +1,249 @@
+﻿@model FurniCraft.Models.Order
+
+@{
+    ViewData["Title"] = "تفاصيل الطلب";
+
+    var statusText = Model.Status switch
+    {
+        "Pending" => "تم استلام الطلب",
+        "Processing" => "جاري تجهيز الطلب",
+        "Shipped" => "الطلب في الطريق إليك",
+        "Delivered" => "تم تسليم الطلب",
+        "Cancelled" => "تم إلغاء الطلب",
+        _ => Model.Status
+    };
+
+    var steps = new[]
+    {
+        ("Pending", "تم استلام الطلب", "bi-receipt"),
+        ("Processing", "جاري التجهيز", "bi-box-seam"),
+        ("Shipped", "تم الشحن", "bi-truck"),
+        ("Delivered", "تم التسليم", "bi-check-circle")
+    };
+
+    var currentStep = Model.Status switch
+    {
+        "Pending" => 0,
+        "Processing" => 1,
+        "Shipped" => 2,
+        "Delivered" => 3,
+        _ => -1
+    };
+}
+
+<div class="container my-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">تفاصيل الطلب</h2>
+            <p class="text-muted mb-0">رقم الطلب #@Model.OrderNumber</p>
+        </div>
+
+        <a asp-action="MyOrders"
+           class="btn btn-fc-outline">
+            <i class="bi bi-arrow-right me-1"></i>
+            العودة لطلباتي
+        </a>
+    </div>
+
+    <!-- Status -->
+    <div class="fc-card p-4 mb-4">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h5 class="fw-bold mb-1">@statusText</h5>
+                <span class="text-muted small">
+                    آخر حالة مسجلة للطلب
+                </span>
+            </div>
+
+            @if (Model.Status == "Cancelled")
+            {
+            <span class="badge bg-danger px-3 py-2">ملغي</span>
+            }
+            else
+            {
+            <span class="badge bg-success px-3 py-2">
+                @statusText
+            </span>
+            }
+        </div>
+
+        @if (Model.Status == "Cancelled")
+        {
+        <div class="alert alert-danger mb-0">
+            تم إلغاء هذا الطلب.
+        </div>
+        }
+        else
+        {
+        <div class="row text-center g-2">
+
+            @for (var i = 0; i < steps.Length; i++)
+                {
+                    var isCompleted = i <= currentStep;
+
+            <div class="col-3">
+                <div class="d-flex flex-column align-items-center">
+
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mb-2
+                                        @(isCompleted ? "bg-success text-white" : "bg-light text-muted")"
+                         style="width:48px;height:48px;">
+
+                        <i class="bi @steps[i].Item3 fs-5"></i>
+                    </div>
+
+                    <small class="@(isCompleted ? "fw-bold text-success" : "text-muted")">
+                        @steps[i].Item2
+                    </small>
+
+                </div>
+            </div>
+                }
+
+        </div>
+        }
+
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Products -->
+        <div class="col-lg-8">
+            <div class="fc-card p-4">
+
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-box-seam text-primary me-2"></i>
+                    المنتجات
+                </h5>
+
+                @foreach (var item in Model.Items)
+                {
+                <div class="border rounded-3 p-3 mb-3">
+
+                    <div class="row align-items-center g-3">
+
+                        <div class="col-3 col-md-2">
+                            <img src="@(item.Product?.MainImage ?? "/images/products/default.jpg")"
+                                 alt="@item.Product?.Name"
+                                 class="rounded"
+                                 style="width:80px;height:80px;object-fit:cover;"
+                                 onerror="this.src='/images/products/default.jpg'" />
+                        </div>
+
+                        <div class="col-9 col-md-4">
+                            <h6 class="fw-bold mb-1">
+                                @item.Product?.Name
+                            </h6>
+                            <small class="text-muted">
+                                الكمية: @item.Quantity
+                            </small>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <small class="text-muted d-block">سعر الوحدة</small>
+                            <strong>@item.UnitPrice.ToString("N0") ج.م</strong>
+                        </div>
+
+                        <div class="col-6 col-md-3 text-end">
+                            <small class="text-muted d-block">الإجمالي</small>
+                            <strong class="text-success">
+                                @item.TotalPrice.ToString("N0") ج.م
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    @if (item.Customizations.Any())
+                        {
+                    <div class="border-top mt-3 pt-3">
+                        <small class="text-muted d-block mb-2">
+                            التخصيصات
+                        </small>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var customization in item.Customizations)
+                                    {
+                            <span class="badge bg-light text-dark border">
+                                @customization.GroupName:
+                                @customization.OptionName
+
+                                @if (customization.AdditionalPrice > 0)
+                                            {
+                                <span class="text-success">
+                                    (+@customization.AdditionalPrice.ToString("N0") ج.م)
+                                </span>
+                                            }
+                            </span>
+                                    }
+                        </div>
+                    </div>
+                        }
+
+                </div>
+                }
+
+                <div class="border-top pt-3 mt-4 d-flex justify-content-between">
+                    <span class="fw-bold fs-5">إجمالي الطلب</span>
+                    <span class="fw-bold fs-4 text-success">
+                        @Model.TotalAmount.ToString("N0") ج.م
+                    </span>
+                </div>
+
+                <p class="text-muted small mt-2 mb-0">
+                    طريقة الدفع: الدفع عند الاستلام
+                </p>
+
+            </div>
+        </div>
+
+        <!-- Delivery -->
+        <div class="col-lg-4">
+            <div class="fc-card p-4">
+
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-truck text-primary me-2"></i>
+                    بيانات التوصيل
+                </h5>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">الاسم</small>
+                    <strong>@Model.CustomerName</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">رقم الهاتف</small>
+                    <strong>@Model.Phone</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">المدينة</small>
+                    <strong>@Model.City</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">العنوان</small>
+                    <strong>@Model.Address</strong>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                {
+                <div class="mb-3">
+                    <small class="text-muted d-block">ملاحظات</small>
+                    <strong>@Model.Notes</strong>
+                </div>
+                }
+
+                <div class="border-top pt-3 mt-3">
+                    <small class="text-muted d-block">تاريخ الطلب</small>
+                    <strong>
+                        @Model.OrderDate.ToLocalTime().ToString("yyyy/MM/dd - hh:mm tt")
+                    </strong>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>

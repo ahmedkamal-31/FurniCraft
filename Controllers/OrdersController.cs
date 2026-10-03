@@ -326,6 +326,40 @@ namespace FurniCraft.Controllers
             return View(orders);
         }
 
+
+
+
+
+        // ==========================================
+        // Customer - تفاصيل طلب العميل
+        // ==========================================
+
+        [HttpGet]
+        public async Task<IActionResult> MyOrderDetails(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Customizations)
+                .FirstOrDefaultAsync(o =>
+                    o.Id == id &&
+                    o.UserId == userId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return View(order);
+        }
+
+
+
+
+
         // 5. ????? ??????? ??? Admin
         // ==========================================
         // Admin - إدارة الطلبات
