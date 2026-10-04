@@ -48,8 +48,6 @@ namespace FurniCraft.Services
             }
 
             var product = await _context.Products
-                .Include(p => p.CustomizationGroups)
-                .ThenInclude(g => g.Options)
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
             if (product == null)
@@ -89,32 +87,31 @@ namespace FurniCraft.Services
                 );
             }
 
-            // جلب التخصيصات المختارة
-            var selectedOptions = await _context.CustomizationOptions
-                .Include(o => o.CustomizationGroup)
-                .Where(o => selectedOptionIds.Contains(o.Id))
-                .ToListAsync();
+            // التحقق من التخصيصات المختارة على السيرفر (لا نثق بما يرسله المتصفح)
+            var selection = await CustomizationSelectionValidator.ValidateAsync(
+                _context,
+                productId,
+                selectedOptionIds);
 
-            decimal extraPrice =
-                selectedOptions.Sum(o => o.AdditionalPrice);
+            if (!selection.IsValid)
+            {
+                return (false, selection.ErrorMessage);
+            }
 
             decimal unitPrice =
-                product.BasePrice + extraPrice;
+                product.BasePrice + selection.ExtraPrice;
 
             var customizationDescriptions =
-                selectedOptions
+                selection.Options
                     .Select(o =>
-                        $"{o.CustomizationGroup?.Name}: {o.Name}" +
+                        $"{o.GroupName}: {o.OptionName}" +
                         (o.AdditionalPrice > 0
                             ? $" (+{o.AdditionalPrice:N0} ج.م)"
                             : ""))
                     .ToList();
 
-            // ترتيب الـ IDs مهم للمقارنة
-            var normalizedOptionIds =
-                selectedOptionIds
-                    .OrderBy(id => id)
-                    .ToList();
+            // ترتيب الـ IDs مهم للمقارنة (القيم المعتمدة من قاعدة البيانات فقط)
+            var normalizedOptionIds = selection.OptionIds;
 
             // هل نفس المنتج بنفس التخصيصات موجود بالفعل؟
             var existingItem = cart.Items.FirstOrDefault(i =>

@@ -16,18 +16,21 @@ namespace FurniCraft.Controllers
         private readonly ApplicationDbContext _context;
         private readonly CartService _cartService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<OrdersController> _logger;
 
         public OrdersController(
             ApplicationDbContext context,
             CartService cartService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            ILogger<OrdersController> logger)
         {
             _context = context;
             _cartService = cartService;
             _userManager = userManager;
+            _logger = logger;
         }
 
-        // 1. ???? ????? ?????
+        // 1. صفحة إتمام الطلب
         [HttpGet]
         public async Task<IActionResult> Checkout()
         {
@@ -50,7 +53,7 @@ namespace FurniCraft.Controllers
             return View(model);
         }
 
-        // 2. ?????? ????? ???? ???????
+        // 2. تنفيذ الطلب وحفظه في قاعدة البيانات
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PlaceOrder(CheckoutViewModel model)
@@ -59,7 +62,8 @@ namespace FurniCraft.Controllers
 
             if (!cart.Items.Any())
             {
-                ModelState.AddModelError("", "??? ?????? ?????.");
+                // رسالة السلة تظهر في صفحة السلة (TempData["CartError"])
+                TempData["CartError"] = "سلة التسوق فارغة.";
                 return RedirectToAction("Index", "Cart");
             }
 
@@ -70,21 +74,32 @@ namespace FurniCraft.Controllers
             }
 
             /*
-             * ???? Transaction ????:
-             * ????? ????? + ??? ???????
-             * ?????? ?? ???.
+             * نستخدم Transaction واحد:
+             * إنشاء الطلب + خصم المخزون
+             * يتم معاً أو لا يتم.
              */
             await using var transaction =
                 await _context.Database.BeginTransactionAsync(
                     IsolationLevel.Serializable);
 
+            // يضيف رسالة خطأ ظاهرة في صفحة Checkout ويلغي العملية
+            async Task<IActionResult> RejectAsync(string message)
+            {
+                ModelState.AddModelError(string.Empty, message);
+
+                await transaction.RollbackAsync();
+
+                model.Cart = cart;
+                return View("Checkout", model);
+            }
+
             try
             {
                 /*
-                 * ????? ?????? ???????? ??? ????.
+                 * تجميع الكميات المطلوبة لكل منتج.
                  *
-                 * ??? ???? ??? ??? ?????? ???? ???? ?????
-                 * ?? ????? ????? ?? customization.
+                 * نفس المنتج قد يظهر أكثر من مرة في السلة
+                 * بتخصيصات مختلفة، لكنه يشترك في نفس المخزون.
                  */
                 var requestedQuantities = cart.Items
                     .GroupBy(i => i.ProductId)
@@ -95,15 +110,15 @@ namespace FurniCraft.Controllers
                 var productIds = requestedQuantities.Keys.ToList();
 
                 /*
-                 * ??? ???????? ?? ????? ????????
-                 * ???? ???????? ??? ?????? ??? Session.
+                 * نجلب المنتجات من قاعدة البيانات
+                 * ولا نعتمد على بيانات الـ Session.
                  */
                 var products = await _context.Products
                     .Where(p => productIds.Contains(p.Id))
                     .ToDictionaryAsync(p => p.Id);
 
                 /*
-                 * ?????? ?? ???? ???????? ???? Stock.
+                 * التحقق من وجود المنتجات وكفاية المخزون.
                  */
                 foreach (var requested in requestedQuantities)
                 {
@@ -111,46 +126,28 @@ namespace FurniCraft.Controllers
                         requested.Key,
                         out var product))
                     {
-                        ModelState.AddModelError(
-                            "",
-                            "??? ???????? ???????? ?? ????? ?? ??? ???????.");
-
-                        await transaction.RollbackAsync();
-
-                        model.Cart = cart;
-                        return View("Checkout", model);
+                        return await RejectAsync(
+                            "أحد المنتجات الموجودة في السلة لم يعد متوفراً في المتجر.");
                     }
 
                     if (!product.IsActive)
                     {
-                        ModelState.AddModelError(
-                            "",
-                            $"?????? \"{product.Name}\" ?? ??? ??????.");
-
-                        await transaction.RollbackAsync();
-
-                        model.Cart = cart;
-                        return View("Checkout", model);
+                        return await RejectAsync(
+                            $"المنتج \"{product.Name}\" غير متاح حالياً.");
                     }
 
                     if (requested.Value > product.StockQuantity)
                     {
-                        ModelState.AddModelError(
-                            "",
-                            $"?????? \"{product.Name}\" ???? ??? {product.StockQuantity} ???? ???? ????? ???? {requested.Value}.");
-
-                        await transaction.RollbackAsync();
-
-                        model.Cart = cart;
-                        return View("Checkout", model);
+                        return await RejectAsync(
+                            $"المنتج \"{product.Name}\" متوفر منه {product.StockQuantity} قطعة فقط، بينما الكمية المطلوبة {requested.Value}.");
                     }
                 }
 
                 var userId = _userManager.GetUserId(User)!;
 
                 /*
-                 * ????? TotalAmount ?? ????? ?????????
-                 * ???? ?? ????? ?????? ?? Session.
+                 * حساب TotalAmount من قاعدة البيانات
+                 * وليس من الأسعار المخزنة في الـ Session.
                  */
                 decimal calculatedOrderTotal = 0;
 
@@ -178,29 +175,29 @@ namespace FurniCraft.Controllers
                     var product = products[item.ProductId];
 
                     /*
-                     * ????? ??? ??? customization options
-                     * ?? ????? ????????.
+                     * التحقق من التخصيصات مرة أخرى من قاعدة البيانات:
+                     * كل خيار يجب أن يتبع هذا المنتج، وخيار واحد لكل مجموعة،
+                     * وكل المجموعات المطلوبة لها اختيار.
+                     * (قد تتغير التخصيصات بعد إضافة المنتج للسلة)
                      */
-                    var selectedOptions = new List<CustomizationOption>();
+                    var selection =
+                        await CustomizationSelectionValidator.ValidateAsync(
+                            _context,
+                            product.Id,
+                            item.SelectedOptionIds);
 
-                    if (item.SelectedOptionIds != null &&
-                        item.SelectedOptionIds.Any())
+                    if (!selection.IsValid)
                     {
-                        selectedOptions = await _context.CustomizationOptions
-                            .Include(o => o.CustomizationGroup)
-                            .Where(o =>
-                                item.SelectedOptionIds.Contains(o.Id))
-                            .ToListAsync();
+                        return await RejectAsync(
+                            $"تخصيصات المنتج \"{product.Name}\" لم تعد صالحة: {selection.ErrorMessage} " +
+                            "يرجى حذفه من السلة وإضافته من جديد.");
                     }
 
                     /*
-                     * ???? ??? ?????? ??????? ?? DB.
+                     * نحسب السعر النهائي بالأسعار الحالية في DB.
                      */
-                    decimal extraPrice =
-                        selectedOptions.Sum(o => o.AdditionalPrice);
-
                     decimal unitPrice =
-                        product.BasePrice + extraPrice;
+                        product.BasePrice + selection.ExtraPrice;
 
                     decimal itemTotal =
                         unitPrice * item.Quantity;
@@ -216,18 +213,16 @@ namespace FurniCraft.Controllers
                     };
 
                     /*
-                     * ??? Snapshot ?? ????????? ???? ?????.
+                     * حفظ Snapshot من التخصيصات داخل الطلب.
                      */
-                    foreach (var option in selectedOptions)
+                    foreach (var option in selection.Options)
                     {
                         orderItem.Customizations.Add(
                             new OrderItemCustomization
                             {
-                                GroupName =
-                                    option.CustomizationGroup?.Name
-                                    ?? "?????",
+                                GroupName = option.GroupName,
 
-                                OptionName = option.Name,
+                                OptionName = option.OptionName,
 
                                 AdditionalPrice =
                                     option.AdditionalPrice
@@ -238,12 +233,12 @@ namespace FurniCraft.Controllers
                 }
 
                 /*
-                 * ?????? ????? ??????? ?? DB.
+                 * الإجمالي النهائي من DB.
                  */
                 order.TotalAmount = calculatedOrderTotal;
 
                 /*
-                 * ??? ?????? ?? ??? Stock.
+                 * خصم الكميات من المخزون.
                  */
                 foreach (var requested in requestedQuantities)
                 {
@@ -253,19 +248,19 @@ namespace FurniCraft.Controllers
                 }
 
                 /*
-                 * ????? ????? + ????? ????????.
+                 * حفظ الطلب + تعديل المخزون.
                  */
                 _context.Orders.Add(order);
 
                 await _context.SaveChangesAsync();
 
                 /*
-                 * ????? ??? Transaction.
+                 * تأكيد الـ Transaction.
                  */
                 await transaction.CommitAsync();
 
                 /*
-                 * ????? ????? ??? ??? ???? ??????? ???????.
+                 * تفريغ السلة بعد نجاح الطلب فقط.
                  */
                 _cartService.ClearCart();
 
@@ -273,13 +268,28 @@ namespace FurniCraft.Controllers
                     nameof(Confirmation),
                     new { id = order.Id });
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                // نسجل الخطأ الحقيقي في الـ Log، ولا نعرض تفاصيله للعميل
+                _logger.LogError(
+                    ex,
+                    "Failed to place order for user {UserId}.",
+                    _userManager.GetUserId(User));
+
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger.LogWarning(
+                        rollbackEx,
+                        "Transaction rollback failed after an order error.");
+                }
 
                 ModelState.AddModelError(
-                    "",
-                    "??? ??? ????? ????? ?????. ???? ??? ????.");
+                    string.Empty,
+                    "حدث خطأ أثناء إتمام الطلب. يرجى المحاولة مرة أخرى.");
 
                 model.Cart = cart;
 
@@ -287,7 +297,7 @@ namespace FurniCraft.Controllers
             }
         }
 
-        // 3. ???? ????? ?????
+        // 3. صفحة تأكيد الطلب
         [HttpGet]
         public async Task<IActionResult> Confirmation(int id)
         {
@@ -310,7 +320,7 @@ namespace FurniCraft.Controllers
             return View(order);
         }
 
-        // 4. ??? ?????? ??????
+        // 4. طلباتي (للعميل)
         [HttpGet]
         public async Task<IActionResult> MyOrders()
         {
@@ -360,7 +370,7 @@ namespace FurniCraft.Controllers
 
 
 
-        // 5. ????? ??????? ??? Admin
+        // 5. إدارة الطلبات للـ Admin
         // ==========================================
         // Admin - إدارة الطلبات
         // ==========================================

@@ -6,6 +6,23 @@
 <div class="container my-5">
     <h2 class="fw-bold mb-4"><i class="bi bi-credit-card-fill text-primary me-2"></i>إتمام طلب الشراء</h2>
 
+    @if (ViewData.ModelState.TryGetValue(string.Empty, out var generalErrors)
+        && generalErrors != null
+        && generalErrors.Errors.Count > 0)
+    {
+        <div class="alert alert-danger" role="alert">
+            <div class="d-flex align-items-start">
+                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                <ul class="mb-0 ps-0 list-unstyled">
+                    @foreach (var error in generalErrors.Errors)
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
     <form asp-action="PlaceOrder" method="post">
         <div class="row g-4">
             <div class="col-lg-7">

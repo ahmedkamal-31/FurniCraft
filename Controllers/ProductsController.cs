@@ -89,13 +89,22 @@ namespace FurniCraft.Controllers
             }
 
             var product = await _context.Products
+                .AsNoTracking()
                 .Include(p => p.Category)
+                .Include(p => p.CustomizationGroups.OrderBy(g => g.Id))
+                    .ThenInclude(g => g.Options.OrderBy(o => o.Id))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
             {
                 return NotFound();
             }
+
+            // Groups without options can't be chosen from. Hiding them also keeps the
+            // form's selectedOptionIds[0..n] indexes continuous so model binding works.
+            product.CustomizationGroups = product.CustomizationGroups
+                .Where(g => g.Options.Any())
+                .ToList();
 
             return View(product);
         }
