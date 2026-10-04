@@ -1,0 +1,71 @@
+﻿@model FurniCraft.Models.Order
+@{
+    var isAdmin = User.IsInRole("Admin");
+
+    var history = Model.StatusHistory
+        .OrderByDescending(h => h.ChangedAt)
+        .ThenByDescending(h => h.Id)
+        .ToList();
+
+    var needsCurrentEntry = history.Count == 0 || history[0].Status != Model.Status;
+
+    var entries = new List<(string Status, DateTime? At, string? Note, string? By)>();
+
+    if (needsCurrentEntry)
+    {
+        entries.Add((Model.Status, null, "الحالة الحالية للطلب (لم يُسجَّل وقت هذا التحديث).", null));
+    }
+
+    entries.AddRange(history.Select(h => (h.Status, (DateTime?)h.ChangedAt, h.Note, h.ChangedBy)));
+
+    string Label(string status) =>
+        isAdmin ? OrderStatusInfo.AdminLabel(status) : OrderStatusInfo.CustomerLabel(status);
+
+    string ItemClass(string status) =>
+        "fc-timeline-item fc-timeline-item--" + OrderStatusInfo.Key(status);
+}
+
+<div class="fc-card p-4 mb-4">
+    <h5 class="fw-bold mb-4">
+        <i class="bi bi-clock-history text-primary me-2" aria-hidden="true"></i>
+        سجل تتبع الطلب
+    </h5>
+
+    <ol class="fc-timeline">
+        @foreach (var entry in entries)
+        {
+            <li class="@ItemClass(entry.Status)">
+                <span class="fc-timeline-dot">
+                    <i class="bi @OrderStatusInfo.Icon(entry.Status)" aria-hidden="true"></i>
+                </span>
+
+                <div class="fc-timeline-body">
+                    <div class="fc-timeline-title">@Label(entry.Status)</div>
+
+                    <div class="fc-timeline-meta">
+                        @if (entry.At.HasValue)
+                        {
+                            <span>
+                                <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
+                                @entry.At.Value.ToLocalTime().ToString("yyyy/MM/dd - hh:mm tt")
+                            </span>
+                        }
+
+                        @if (isAdmin && !string.IsNullOrWhiteSpace(entry.By))
+                        {
+                            <span>
+                                <i class="bi bi-person me-1" aria-hidden="true"></i>
+                                بواسطة: @entry.By
+                            </span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(entry.Note))
+                    {
+                        <p class="fc-timeline-note">@entry.Note</p>
+                    }
+                </div>
+            </li>
+        }
+    </ol>
+</div>

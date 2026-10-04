@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
-namespace FurniCraft.Models {
-    public class Order {
+namespace FurniCraft.Models
+{
+    public class Order
+    {
         public int Id { get; set; }
         [Required, MaxLength(50)] public string OrderNumber { get; set; } = string.Empty;
         [Required] public string UserId { get; set; } = string.Empty;
@@ -14,5 +16,6 @@ namespace FurniCraft.Models {
         [Required, MaxLength(300)] public string Address { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
     }
 }

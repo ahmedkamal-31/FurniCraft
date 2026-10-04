@@ -19,6 +19,7 @@ namespace FurniCraft.Data
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -37,6 +38,10 @@ namespace FurniCraft.Data
                 .WithMany()
                 .HasForeignKey(oi => oi.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // سجل حالات الطلب: فهرس لتسريع جلب سجل طلب معين
+            builder.Entity<OrderStatusHistory>()
+                .HasIndex(h => new { h.OrderId, h.ChangedAt });
         }
     }
 }

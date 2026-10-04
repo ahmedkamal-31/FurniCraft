@@ -237,6 +237,20 @@ namespace FurniCraft.Controllers
                  */
                 order.TotalAmount = calculatedOrderTotal;
 
+
+
+                /*
+                 * أول سجل في تتبع الطلب: تم استلام الطلب.
+                 * يُحفظ مع الطلب في نفس الـ Transaction.
+                 */
+                order.StatusHistory.Add(new OrderStatusHistory
+                {
+                    Status = "Pending",
+                    ChangedBy = "العميل",
+                    ChangedAt = order.OrderDate
+                });
+
+
                 /*
                  * خصم الكميات من المخزون.
                  */
@@ -354,6 +368,7 @@ namespace FurniCraft.Controllers
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Customizations)
+                .Include(o => o.StatusHistory)
                 .FirstOrDefaultAsync(o =>
                     o.Id == id &&
                     o.UserId == userId);
@@ -400,6 +415,7 @@ namespace FurniCraft.Controllers
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Customizations)
+                .Include(o => o.StatusHistory)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
@@ -418,8 +434,8 @@ namespace FurniCraft.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(
-            int orderId,
-            string status)
+    int orderId,
+    string status)
         {
             var order = await _context.Orders
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -443,7 +459,21 @@ namespace FurniCraft.Controllers
                 return BadRequest();
             }
 
+            // نفس الحالة الحالية: لا يوجد تغيير فلا نسجل شيئاً
+            if (order.Status == status)
+            {
+                return RedirectToAction(nameof(AdminIndex));
+            }
+
             order.Status = status;
+
+            _context.OrderStatusHistories.Add(new OrderStatusHistory
+            {
+                OrderId = order.Id,
+                Status = status,
+                ChangedBy = User.Identity?.Name ?? "Admin",
+                ChangedAt = DateTime.UtcNow
+            });
 
             await _context.SaveChangesAsync();
 

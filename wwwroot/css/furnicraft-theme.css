@@ -2434,3 +2434,121 @@ html {
     .fc-clear-all:hover {
         color: var(--fc-primary);
     }
+
+
+
+
+
+/* =========================================================
+   ORDER TIMELINE (added)
+   ========================================================= */
+
+.fc-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fc-timeline-item {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+}
+
+    .fc-timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    /* vertical line between the dots */
+    .fc-timeline-item::before {
+        content: "";
+        position: absolute;
+        inset-inline-start: 19px;
+        top: 40px;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--fc-border);
+    }
+
+    .fc-timeline-item:last-child::before {
+        display: none;
+    }
+
+.fc-timeline-dot {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    background-color: var(--fc-primary);
+    box-shadow: 0 0 0 4px var(--fc-card-bg);
+}
+
+.fc-timeline-body {
+    padding-top: 0.15rem;
+    min-width: 0;
+}
+
+.fc-timeline-title {
+    font-weight: 700;
+    color: var(--fc-dark);
+}
+
+/* the newest entry stands out */
+.fc-timeline-item:first-child .fc-timeline-title {
+    font-weight: 800;
+}
+
+.fc-timeline-item:first-child .fc-timeline-dot {
+    box-shadow: 0 0 0 4px var(--fc-card-bg), 0 0 0 6px var(--fc-primary-soft);
+}
+
+.fc-timeline-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    color: var(--fc-text-muted);
+}
+
+.fc-timeline-note {
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    color: var(--fc-text);
+    background-color: var(--fc-section-bg);
+    border-radius: var(--fc-radius);
+}
+
+/* status colours */
+.fc-timeline-item--pending .fc-timeline-dot {
+    background-color: #8C6D53;
+}
+
+.fc-timeline-item--processing .fc-timeline-dot {
+    background-color: #B98655;
+}
+
+.fc-timeline-item--shipped .fc-timeline-dot {
+    background-color: #5B7A8C;
+}
+
+.fc-timeline-item--delivered .fc-timeline-dot {
+    background-color: #4F7A3A;
+}
+
+.fc-timeline-item--cancelled .fc-timeline-dot {
+    background-color: #B3402F;
+}
+
+.fc-timeline-item--other .fc-timeline-dot {
+    background-color: #8A8178;
+}
