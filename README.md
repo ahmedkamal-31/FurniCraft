@@ -13,7 +13,7 @@ Customers can browse furniture by category, view product details, add items to a
 
 | Home | Shop | Product Details |
 | :---: | :---: | :---: |
-| ![Home](screenshots/home.png) | ![Shop](screenshots/shop.png) | ![Product Details](screenshots/product-details.png) |
+| ![Home](screenshots/home.png) | ![Shop](screenshots/shop.png) |  |
 
 | Cart | Login / Register |
 | :---: | :---: |
